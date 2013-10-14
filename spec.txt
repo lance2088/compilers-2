@@ -1,0 +1,267 @@
+= SPECIFICATION of the LANGUAGE PANKO =
+Author: Peter Csiba
+
+== Introduction ==
+
+PANKO is procedural language with variables, functions, pointers and arrays. 
+There are no objects, anonymous anythings, function pointers, pointers to pointers and all this fancy stuff. PANKO doesn't need that. 
+PANKO has basic types of variable and provides automatic conversion between them. 
+
+PANKO's syntax is inspired by C, Python, Polish notation and our slang. It's aimed for markets with cheap
+programming force as this language deeply reduces [1] compiling time and therefore saves so precious machine time. As we know there are only few languages of this kind. This and the easy syntax makes PANKO special. 
+ 
+[1] This is because the simple syntax for computers to parse. 
+
+== 1 Scope ==
+This specification aims to provide basic understanding of language PANKO.
+Note that the language has no '[', ']' keywords so in the following documentation [token] means a token to be explained later.  
+
+Also, also keywords are in the regexp [A-Z+-=] and user defined tokens [a-z_] so there is no possible collision between these two sets. 
+
+From now [A-Z+*/-^%?'"]+ is known as SET_KEY. All keywords are one word. All text after nulary operators such as SUCHY MAM are ignored. 
+From now [a-z_]+ is known as SET_USER.
+
+Semantics of SET_USER is IDENTIFIER_SET in C. 
+
+Only one opeartor could be used per line except SUCHY. 
+
+Note that we use a loosy REGEXP syntax where in [] are some character sets and []+ or []* denote the multiplicity of the body. 
+
+== 2 Normative references ==
+At the end we provide examples how to code the following examples in PANKO:
+    Sort
+    Finding primes
+    Check if a graph is connected
+
+== 3 Definitions and Conventions ==
+From now {FLOAT, INT, CHAR} is known as SET_TYPES
+Pointers are treated as INT. 
+All variable take the same amount of space. This depends on the architecture to be compiled to. 
+
+INTEGER_VALUE
+[0-9\-]+
+is a subset of SET_VALUE
+
+CHARACTER_VALUE
+'[char]'
+is a subset of SET_VALUE
+
+FLOAT_VALUE
+[0-9\-]+\.[0-9\-]+
+is a subset of SET_VALUE
+
+And nothing else is a SET_VALUE. 
+
+VARIABLE_DECLARATION with keyword PAN:
+PAN [variable_type] [variable_name] 
+where [variable_type] is a string from SET_TYPES
+and [variable_name] is a string from SET_USER
+
+variable_name is a kind of VARIABLE_NAME
+
+FUNCTION_DECLARATION with keyword MOTAC:
+MOTAC [return_type] [function_name] [VARIABLE_DECLARATION]* 
+where return_type from SET_TYPE
+function_name from SET_USER
+
+There is no VOID keyword as in C. If user doesn't want to return a value she doesn't have to. 
+PANKO will return some random value. 
+
+The main() equivalent in PANKO is MEGA MOTAC and its signature is:
+MOTAC INT MEGA MOTAC INT argc ROLKY argc INT argv
+Note that it's enough to write MEGA. But who on earth writes MEGA without MOTAC if actually it is a MOTAC? 
+
+VYPAPAJ is equivalent to RETURN in C 
+If no VYPAPAJ is found in function body, PANKO returns by default 0 as INT 
+
+FUNCTION_CALL with keyword ZMOTAJ:
+ZMOTAJ [function_name] [VARIABLE_NAME|VALUE_EXPRESSION]*
+
+Note that it's not allowed to pass FUNCTION_CALL result as a parameter for FUNCTION_CALL
+
+It's possible only to call functions which were previously declared. 
+
+VALUE_EXPRESSION
+[operator] [operand]*
+where operator from [-+/*^%]
+SET_VALUE is a subset of VALUE_EXPRESSION
+Resembles function call. 
+
+VARIABLE_ASSIGNMENT with keyword NAMOTAJ:
+NAMOTAJ [declared variable_name|ARRAY_ACCESS] [value|VALUE_EXPRESSION|FUNCTION_CALL] 
+where value from SET_VALUE
+
+As all functions return a value and as PANKO provides implicit conversions between all SET_TYPES 
+there are no problems with assigning. 
+
+POINTER_DECLARATION with keyword BOZI: 
+BOZI PAN [variable_name] 
+variable name from SET_TYPES (!not an array) 
+There is no need for [variable_type] as PANKO provides implicit conversions between types.
+
+Note that it's obviously not allowed to declare BOZI BOZI PAN. 
+
+POINTER_VALUE with keyword ZEMAN:
+ZEMAN [pointer_name] 
+POINTER_VALUE is a kind of VALUE_EXPRESSION 
+
+Note that it's obviously not allowed to call ZEMAN ZEMAN PAN. 
+
+ARRAY_DECLARATION with keyword ROLKY: 
+ROLKY [count] [variable_type] [array_name]
+where count from INTEGER_VALUE|variable_name
+array_name from SET_USER
+variable_type from SET_TYPE
+
+array_name is a kind of VARIABLE_NAME
+
+if count is zero it is an array with non-defined size, it will be set as soon as it could, e.g. array assignment or string building 
+
+ARRAY_ACCESS with keyword IKEA
+IKEA [array_name] [value|variable_name] 
+value is a kind of VALUE_EXPRESSION
+returns value-th index 
+
+To be followed... 
+
+== 4 Compliance ==
+This specification describes only the PANKO language. It makes no provision for either the library or the preprocessor. 
+
+== 5 Environment ==
+
+It could be compiled on machines where a compiler is available. 
+
+== 6 Language == 
+
+6.1 Lexical elements
+
+6.1.1 Keywords
+Described by the set SET_KEY
+
+6.1.2 Identifiers
+Described by the set SET_USER
+
+6.1.2.1 Scopes of identifiers
+Scope is made up with double space indentation as in python: 
+PAN INT in_main_scope
+  PAN INT in_sub_scope
+PRIMOTAJ in_sub_scope SUCHY PES this line makes error as PANKO in_sub_scope is no more defined
+
+PANKO allows declaration of functions not in the main scope. 
+
+6.1.2.2 Linkages of identifiers
+All arithmetic operators, functions, logical operators have a very similar syntax: 
+[OPERATOR] [operands]* 
+
+6.1.2.6 Compatible type and composite type
+No composite types as struct in C or object in Python. 
+
+6.1.3 Constants
+
+6.1.3.1 Floating constants
+TROSKU := min FLOAT > 0 
+Above a pseudocode inspired by an ancient programming language. 
+
+6.1.3.2 Integer constants
+
+TISIC := max INT
+PIPKOS := 0
+FAJNE := 1
+Above a pseudocode inspired by an ancient programming language. 
+Semantics of PIPKOS is FALSE and of FAJNE is TRUE. 
+
+6.1.9 Comments
+
+All characters after keyword SUCHY PES are ignored by the compiler. 
+Note that it's enough to write SUCHY. But who on earth writes SUCHY without PES? 
+
+6.2 Conversions
+
+PANKO provides conversions between KEY_TYPES. 
+
+==7 Library==
+TODO
+
+==8 Consistent Renaming for Ordinary Identifiers==
+No. 
+
+9 Internal Representation of Types
+Compiler uses LLVM to compile into low level languages as assembler. 
+
+10 Type Analysis
+
+This is easy as all valid types are in SET_TYPES. 
+
+11 Tree Type Computations
+
+CONDITION_VALUE := [PIPKOS, FAJNE] 
+is kind of CONDITION_EXPRESSION
+
+COMPARISON
+[COMPARISON_OPERATOR] [operand]*
+where COMPARISON_OPERATOR := [EQUAL, SMALLER]
+
+CONDITION_EXPRESSION 
+[LOGICAL_OPERATOR] [operand]* 
+where LOGICAL_OPERATOR := [OR, AND, NOT]
+and operand is CONDITION_VALUE or COMPARISON
+
+CONDITION_EXPRESSION and VALUE_EXPRESSION are not recursive. VALUE_EXPRESSION could be passed to CONDITION_EXPRESSION but not otherwise. 
+ 
+and nothing else is a CONDITION_EXPRESSION
+
+IF and ELSE: 
+AGE? [CONDITION_EXPRESSION] 
+  SUCHY PES blok 1  
+PIVO
+  SUCHY PES blok 2
+
+break loop control: 
+MAM PASS
+Note that it's enough to write MAM. But who on earth writes MAM without PASS? 
+
+break loop control:
+FREE
+
+WHILE LOOP: 
+NAMOTAVAJ [CONDITION_EXPRESSION] 
+  SUCHY PES looping
+  
+FOR LOOP: 
+PREMOTAVAJ [not declared variable_name] [VALUE_EXPRESSION]
+  SUCHY PES looping while variable_name SMALLER integer_value 
+  SUCHY PES PRIMOTAJ integer_value
+
+== 12 Special ==
+Read from stdin: 
+VMOTAJ [VARIABLE_DECLARATION|ARRAY_DECLARATION]
+No problem if the variable has been previously declared. 
+
+Write to stdout: 
+VYMOTAJ [variable_name|array_name|value|VALUE_EXPRESSION] 
+
+Increment: 
+PRIMOTAJ
+
+Decrement: 
+ODMOTAJ
+
+Do nothing: 
+FREE
+
+Strings, i.e. array of chars. PANKO provides a shortcut for creating array of chars: 
+"blah blah"
+is kind of VALUE_EXPRESSION 
+Usage: 
+ROLKY 0 CHAR string 
+NAMOTAJ string "Hello World!" 
+
+Error throwing: 
+PLACES [variable_name|array_name|value_expression] 
+
+POHALUZ [operand]* 
+executes a random KEYWORD from PANKO language except block control, declarations and IO (could be POHALUZ). Uses as much operands as needed - if needs more it generates more. 
+
+== 13 TODO ==
+Multidimensional array
+Extern 

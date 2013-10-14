@@ -1,0 +1,52 @@
+ROLKY 0 INT nodes SUCHY PES we don't know the array size yet 
+
+MOTAC INT find INT a 
+  PAN INT ia 
+  NAMOTAJ ia a 
+  NAMOTAVAJ NOT EQUALS ia IKEA nodes ia 
+    NAMOTAJ ia IKEA nodes ia
+    
+  NAMOTAVAJ NOT EQUALS a ia 
+    PAN INT buffer
+    NAMOTAJ buffer a 
+    NAMOTAJ a IKEA nodes a
+    NAMOTAJ IKEA nodes buffer ia
+
+  VYPAPAJ ia 
+
+MOTAC INT union INT a INT b 
+  PAN INT fa 
+  PAN INT fb
+  NAMOTAJ fa ZMOTAJ find a 
+  NAMOTAJ fb ZMOTAJ find b 
+  
+  AGE? NOT EQUAL fa fb
+    NAMOTAJ IKEA nodes fa fb
+
+MEGA MOTAC 
+  VMOTAJ INT n 
+  VMOTAJ ROLKY n INT nodes SUCHY PES using dynamic arrays 
+  PREMOTAVAJ i n 
+    NAMOTAJ IKEA nodes i i
+  
+  VMOTAJ INT m 
+  PREMOTAVAJ to_je_jedno m
+    VMOTAJ INT a
+    VMOTAJ INT b 
+    ZMOTAJ union a b 
+    
+  PAN INT cluster 
+  NAMOTAJ cluster IKEA nodes 1 
+  
+  PAN INT result 
+  NAMOTAJ result FAJNE
+  
+  PREMOTAVAJ i n 
+    AGE? NOT EQUAL cluster 
+      NAMOTAJ result PIPKOS
+      MAM PASS 
+  
+  AGE? EQUAL result FAJNE 
+    VYMOTAJ "ANO"
+  AGE? EQUAL result FAJNE 
+    VYMOTAJ "NIE"

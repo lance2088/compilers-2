@@ -1,0 +1,21 @@
+MEGA MOTAC
+  VYMOTAJ '#'
+  VMOTAJ PAN INT pocet
+ 
+  VYMOTAJ '?' 
+  VMOTAJ ROLKY pocet INT pole
+  
+  PAN INT pocet_minus_jedna 
+  NAMOTAJ pocet_minus_jedna - pocet 1 
+  
+  PREMOTAVAJ c pocet_minus_jedna
+    PREMOTAVAJ d - pocet_minus_jedna c  
+      AGE? IKEA pole d SMALLER IKEA pole + d 1
+        PAN INT swap
+        NAMOTAJ swap IKEA pole d 
+        NAMOTAJ IKEA pole d IKEA pole + d 1
+        NAMOTAJ IKEA pole + d 1 swap 
+ 
+  VYMOTAJ pole
+  
+  SUCHY PES this code is actually shorter than the reference C code 
