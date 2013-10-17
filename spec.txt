@@ -9,6 +9,8 @@ PANKO has basic types of variable and provides automatic conversion between them
 
 PANKO's syntax is inspired by C, Python, Polish notation and our slang. It's aimed for markets with cheap
 programming force as this language deeply reduces [1] compiling time and therefore saves so precious machine time. As we know there are only few languages of this kind. This and the easy syntax makes PANKO special. 
+
+PANKO also tries to compile whatever possible. That presumes the programmer isn't a noob and so the programmer is actually a PANKO. 
  
 [1] This is because the simple syntax for computers to parse. 
 
@@ -23,7 +25,10 @@ From now [a-z_]+ is known as SET_USER.
 
 Semantics of SET_USER is IDENTIFIER_SET in C. 
 
-Only one opeartor could be used per line except SUCHY. 
+PANKO executes maximally one operator per line. With other words and more specifically: 
+PANKO takes the first token of the line (we don't count indentation used for blocks) and then takes the required amount of arguments which could be computed like IKEA array 10. 
+If more arguments, operators or tokens are written on line, then compiler tells a warning and ignores the excess ones. Warning is not generated if the first excess token is SUCHY. 
+If less, then it tells a warning and generates random values of required type.  
 
 Note that we use a loosy REGEXP syntax where in [] are some character sets and []+ or []* denote the multiplicity of the body. 
 
@@ -220,7 +225,7 @@ break loop control:
 MAM PASS
 Note that it's enough to write MAM. But who on earth writes MAM without PASS? 
 
-break loop control:
+continue loop control:
 FREE
 
 WHILE LOOP: 
@@ -265,3 +270,12 @@ executes a random KEYWORD from PANKO language except block control, declarations
 == 13 TODO ==
 Multidimensional array
 Extern 
+DIRECT - goto
+PURE - null pointer 
+MACKAT -
+TVOJ FOTER -
+BAVI - 
+POCHILL -
+POCHIP -
+VYFAJCENY KAPOR -  
+variable reference 
