@@ -61,8 +61,10 @@ And nothing else is a SET_VALUE.
 VALUE_EXPRESSION
 [operator] [operand]*
 where operator from [-+/*^%]
+where operand from [value|VALUE_EXPRESSION|FUNCTION_CALL] 
 SET_VALUE is a subset of VALUE_EXPRESSION
 Resembles function call. 
+Note that VALUE_EXPRESSION could be recursive. And only VALUE_EXPRESSION is recursive. 
 
 VARIABLE_DECLARATION with keyword PAN:
 PAN [variable_type] [variable_name] 
@@ -78,6 +80,7 @@ where value from SET_VALUE
 
 As all functions return a value and as PANKO provides implicit conversions between all SET_TYPES 
 there are no problems with assigning. 
+
 FUNCTION_DECLARATION with keyword MOTAC: [return_type] [function_name] [VARIABLE_DECLARATION]* 
 where return_type from SET_TYPE
 function_name from SET_USER
@@ -90,6 +93,7 @@ The main() equivalent in PANKO is MEGA MOTAC and its signature is:
 MOTAC INT MEGA MOTAC INT argc ROLKY argc INT argv
 Note that it's enough to write MEGA. But who on earth writes MEGA without MOTAC if actually it is a MOTAC? In this case a warning is thrown. 
 This is an equivalent declaration: 'MEGA MOTAC\n'
+If no MEGA is found, compiler assumes the whole file be a body of MEGA MOTAC. 
 
 VYPAPAJ is equivalent to RETURN in C 
 If no VYPAPAJ is found in function body, PANKO returns INT 0 by default, warning is thrown. 
