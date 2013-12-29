@@ -1,14 +1,15 @@
 = SPECIFICATION of the LANGUAGE PANKO =
 Author: Peter Csiba
+Date: Ocotober 2013
 
 == Introduction ==
 
-PANKO is procedural language with variables, functions, pointers and arrays. 
+PANKO is a procedural language with variables, functions and arrays. 
 There are no objects, anonymous anythings, function pointers, pointers to pointers and all this fancy stuff. PANKO doesn't need that. 
 PANKO has basic types of variable and provides automatic conversion between them. 
 
-PANKO's syntax is inspired by C, Python, Polish notation and our slang. It's aimed for markets with cheap
-programming force as this language deeply reduces [1] compiling time and therefore saves so precious machine time. As we know there are only few languages of this kind. This and the easy syntax makes PANKO special. 
+PANKO's syntax is inspired by C, Python, Polish (prefix) notation and our slang. It's aimed for markets with cheap
+programming force as this language deeply reduces [1] compiling time and therefore saves so precious machine time. As we know there are only few languages of this kind. This and easy to grasp syntax makes PANKO special. 
 
 PANKO also tries to compile whatever possible. That presumes the programmer isn't a noob and so the programmer is actually a PANKO. 
  
@@ -20,17 +21,15 @@ Note that the language has no '[', ']' keywords so in the following documentatio
 
 Also, also keywords are in the regexp [A-Z+-=] and user defined tokens [a-z_] so there is no possible collision between these two sets. 
 
-From now [A-Z+*/-^%?'"]+ is known as SET_KEY. All keywords are one word. All text after nulary operators such as SUCHY MAM are ignored. 
+From now [A-Z+*/-^%?'"]+ is known as SET_KEY. All keywords are one word. All text after nulary operators such as SUCHY or MAM are ignored. 
 From now [a-z_]+ is known as SET_USER.
-
-Semantics of SET_USER is IDENTIFIER_SET in C. 
+Note that we use a loosy REGEXP syntax where in [] are some character sets and []+ or []* denote the multiplicity of the body. 
+Note that semantics of SET_USER is same as semantics of IDENTIFIER_SET in language C. 
 
 PANKO executes maximally one operator per line. With other words and more specifically: 
-PANKO takes the first token of the line (we don't count indentation used for blocks) and then takes the required amount of arguments which could be computed like IKEA array 10. 
-If more arguments, operators or tokens are written on line, then compiler tells a warning and ignores the excess ones. Warning is not generated if the first excess token is SUCHY. 
-If less, then it tells a warning and generates random values of required type.  
-
-Note that we use a loosy REGEXP syntax where in [] are some character sets and []+ or []* denote the multiplicity of the body. 
+PANKO takes the first token of the line (we don't count indentation used for blocks) and then takes the required amount of arguments which could be computed. For example 'IKEA array 10'. 
+If more arguments, operators or tokens are written on line, then compiler tells a warning and ignores the excess ones. Warning is not generated if the first excess token is SUCHY or MAM. 
+If less, then it tells a warning and generates random values of required type for the rest of tokens.  
 
 == 2 Normative references ==
 At the end we provide examples how to code the following examples in PANKO:
@@ -41,50 +40,23 @@ At the end we provide examples how to code the following examples in PANKO:
 == 3 Definitions and Conventions ==
 From now {FLOAT, INT, CHAR} is known as SET_TYPES
 Pointers are treated as INT. 
-All variable take the same amount of space. This depends on the architecture to be compiled to. 
+All variable take the same amount of memory. This depends on the architecture to be compiled to (for PANKO 1.0 it is 32 bits) 
 
 INTEGER_VALUE
-[0-9\-]+
+[\+\-]*[0-9]+
 is a subset of SET_VALUE
+Note that '\-' is escaped '-'.
 
 CHARACTER_VALUE
-'[char]'
+'[.]'
 is a subset of SET_VALUE
+Note that '.' is any character.
 
 FLOAT_VALUE
-[0-9\-]+\.[0-9\-]+
+INTEGER_VALUE\.[0-9]+ 
 is a subset of SET_VALUE
 
 And nothing else is a SET_VALUE. 
-
-VARIABLE_DECLARATION with keyword PAN:
-PAN [variable_type] [variable_name] 
-where [variable_type] is a string from SET_TYPES
-and [variable_name] is a string from SET_USER
-
-variable_name is a kind of VARIABLE_NAME
-
-FUNCTION_DECLARATION with keyword MOTAC:
-MOTAC [return_type] [function_name] [VARIABLE_DECLARATION]* 
-where return_type from SET_TYPE
-function_name from SET_USER
-
-There is no VOID keyword as in C. If user doesn't want to return a value she doesn't have to. 
-PANKO will return some random value. 
-
-The main() equivalent in PANKO is MEGA MOTAC and its signature is:
-MOTAC INT MEGA MOTAC INT argc ROLKY argc INT argv
-Note that it's enough to write MEGA. But who on earth writes MEGA without MOTAC if actually it is a MOTAC? 
-
-VYPAPAJ is equivalent to RETURN in C 
-If no VYPAPAJ is found in function body, PANKO returns by default 0 as INT 
-
-FUNCTION_CALL with keyword ZMOTAJ:
-ZMOTAJ [function_name] [VARIABLE_NAME|VALUE_EXPRESSION]*
-
-Note that it's not allowed to pass FUNCTION_CALL result as a parameter for FUNCTION_CALL
-
-It's possible only to call functions which were previously declared. 
 
 VALUE_EXPRESSION
 [operator] [operand]*
@@ -92,13 +64,43 @@ where operator from [-+/*^%]
 SET_VALUE is a subset of VALUE_EXPRESSION
 Resembles function call. 
 
+VARIABLE_DECLARATION with keyword PAN:
+PAN [variable_type] [variable_name] 
+where [variable_type] is a string from SET_TYPES
+and [variable_name] is a string from SET_USER
+
+variable_name is a kind of VARIABLE_NAME
+if declaring variable with existing name then a warning is thrown. 
+
 VARIABLE_ASSIGNMENT with keyword NAMOTAJ:
 NAMOTAJ [declared variable_name|ARRAY_ACCESS] [value|VALUE_EXPRESSION|FUNCTION_CALL] 
 where value from SET_VALUE
 
 As all functions return a value and as PANKO provides implicit conversions between all SET_TYPES 
 there are no problems with assigning. 
+FUNCTION_DECLARATION with keyword MOTAC: [return_type] [function_name] [VARIABLE_DECLARATION]* 
+where return_type from SET_TYPE
+function_name from SET_USER
+if declaring function with existing name then a warning is thrown. 
 
+There is no VOID keyword as in C. If user doesn't want to return a value she doesn't have to. 
+PANKO will return some random value. Note that this behaviout should not be used as a random generator. 
+
+The main() equivalent in PANKO is MEGA MOTAC and its signature is:
+MOTAC INT MEGA MOTAC INT argc ROLKY argc INT argv
+Note that it's enough to write MEGA. But who on earth writes MEGA without MOTAC if actually it is a MOTAC? In this case a warning is thrown. 
+This is an equivalent declaration: 'MEGA MOTAC\n'
+
+VYPAPAJ is equivalent to RETURN in C 
+If no VYPAPAJ is found in function body, PANKO returns INT 0 by default, warning is thrown. 
+
+FUNCTION_CALL with keyword ZMOTAJ:
+ZMOTAJ [function_name] [VARIABLE_NAME|VALUE_EXPRESSION]*
+
+Note that it's not allowed to pass FUNCTION_CALL result as a parameter for FUNCTION_CALL
+It's only possible to call functions which were previously declared. Otherwise POHALUZ is evaluated and warning is thrown. 
+
+/* 
 POINTER_DECLARATION with keyword BOZI: 
 BOZI PAN [variable_name] 
 variable name from SET_TYPES (!not an array) 
@@ -111,6 +113,7 @@ ZEMAN [pointer_name]
 POINTER_VALUE is a kind of VALUE_EXPRESSION 
 
 Note that it's obviously not allowed to call ZEMAN ZEMAN PAN. 
+*/ 
 
 ARRAY_DECLARATION with keyword ROLKY: 
 ROLKY [count] [variable_type] [array_name]
@@ -130,6 +133,7 @@ returns value-th index
 To be followed... 
 
 == 4 Compliance ==
+
 This specification describes only the PANKO language. It makes no provision for either the library or the preprocessor. 
 
 == 5 Environment ==
@@ -147,10 +151,13 @@ Described by the set SET_KEY
 Described by the set SET_USER
 
 6.1.2.1 Scopes of identifiers
-Scope is made up with double space indentation as in python: 
+Scope is made up with double space indentation as in Python: 
 PAN INT in_main_scope
   PAN INT in_sub_scope
 PRIMOTAJ in_sub_scope SUCHY PES this line makes error as PANKO in_sub_scope is no more defined
+
+It is allowed to declare variable / function with same name but a warning is thrown. 
+Old declaration is forgotten and new used. 
 
 PANKO allows declaration of functions not in the main scope. 
 
@@ -166,6 +173,7 @@ No composite types as struct in C or object in Python.
 6.1.3.1 Floating constants
 TROSKU := min FLOAT > 0 
 Above a pseudocode inspired by an ancient programming language. 
+Mind the floating point precision. That means for most of values V holds V + TROSKU = V. 
 
 6.1.3.2 Integer constants
 
@@ -182,22 +190,23 @@ Note that it's enough to write SUCHY. But who on earth writes SUCHY without PES?
 
 6.2 Conversions
 
-PANKO provides conversions between KEY_TYPES. 
+PANKO provides implicit conversions between KEY_TYPES. 
 
 ==7 Library==
-TODO
+TODO (Extern) 
 
 ==8 Consistent Renaming for Ordinary Identifiers==
 No. 
 
-9 Internal Representation of Types
+== 9 Internal Representation of Types ==
+
 Compiler uses LLVM to compile into low level languages as assembler. 
 
-10 Type Analysis
+== 10 Type Analysis == 
 
 This is easy as all valid types are in SET_TYPES. 
 
-11 Tree Type Computations
+== 11 Tree Type Computations == 
 
 CONDITION_VALUE := [PIPKOS, FAJNE] 
 is kind of CONDITION_EXPRESSION
@@ -210,6 +219,7 @@ CONDITION_EXPRESSION
 [LOGICAL_OPERATOR] [operand]* 
 where LOGICAL_OPERATOR := [OR, AND, NOT]
 and operand is CONDITION_VALUE or COMPARISON
+Note that is enough to implement only NAND, but we are compassionate about our programmers (users). 
 
 CONDITION_EXPRESSION and VALUE_EXPRESSION are not recursive. VALUE_EXPRESSION could be passed to CONDITION_EXPRESSION but not otherwise. 
  
@@ -221,19 +231,19 @@ AGE? [CONDITION_EXPRESSION]
 PIVO
   SUCHY PES blok 2
 
-break loop control: 
+BREAK loop control: 
 MAM PASS
 Note that it's enough to write MAM. But who on earth writes MAM without PASS? 
 
-continue loop control:
-FREE
+CONTINUE loop control:
+CHILL
 
 WHILE LOOP: 
-NAMOTAVAJ [CONDITION_EXPRESSION] 
+MACKAJ [CONDITION_EXPRESSION] 
   SUCHY PES looping
   
 FOR LOOP: 
-PREMOTAVAJ [not declared variable_name] [VALUE_EXPRESSION]
+POCHIPUJ [variable_name] [VALUE_EXPRESSION]
   SUCHY PES looping while variable_name SMALLER integer_value 
   SUCHY PES PRIMOTAJ integer_value
 
@@ -252,30 +262,91 @@ Decrement:
 ODMOTAJ
 
 Do nothing: 
-FREE
+POCHILL
 
-Strings, i.e. array of chars. PANKO provides a shortcut for creating array of chars: 
+STRINGS, i.e. array of chars. PANKO provides a shortcut for creating array of chars: 
 "blah blah"
 is kind of VALUE_EXPRESSION 
 Usage: 
 ROLKY 0 CHAR string 
-NAMOTAJ string "Hello World!" 
 
 Error throwing: 
-PLACES [variable_name|array_name|value_expression] 
+YOLO - try 
+TVOJ FOTER [CONDITION_EXPRESSION] - catch if value
+HATE - throw
+FREE - finally 
+PLACES [string] - writes to std_err a message: "Places, lebo {string}."  
 
+ASSERT: 
+SPOKO [CONDITION_EXPRESSION] - assert
+PLACES [string] 
+This is a shortcut to YOLO block.
+
+RANDOM_VALUE: 
+BAVI [variable_name, array_name]
+Note that evaluated on compile time. 
+
+RANDOM_CALL: 
 POHALUZ [operand]* 
 executes a random KEYWORD from PANKO language except block control, declarations and IO (could be POHALUZ). Uses as much operands as needed - if needs more it generates more. 
+Note that evaluated on compile time. 
+
+SLZY TVY - writes out text of a famous song (see in APPENDIX 1) 
 
 == 13 TODO ==
 Multidimensional array
 Extern 
 DIRECT - goto
 PURE - null pointer 
-MACKAT -
-TVOJ FOTER -
-BAVI - 
-POCHILL -
-POCHIP -
 VYFAJCENY KAPOR -  
+DOGE BLOCK: MANY, MUCH, VERY, SO, SUCH 
+
 variable reference 
+
+
+== 14 APPENDEX 1 == 
+Chvilku vzpomínej, je to všechno jen pár let
+Na kytaru v duchu hrej, tvoje parta je tu hned
+Z cigaret je modrej dým, hraje magneťák
+Holka sedla na tvůj klín, nevíš ani jak,
+nevíš jak.
+
+Tvý roky bláznivý chtěly křídla pro svůj let
+Dneska už možná nevíš sám proč tě tenkrát pálil svět
+Chtěl jsi prachy na mejdan, byl to hloupej špás
+Když jsi v noci vyšel ven, snad ses trochu třás,
+trochu třás
+
+Když tě našel noční hlídač
+byl by to jen příběh bláznivýho kluka
+Nebejt nože ve tvejch dětskej rukách
+Nebejt strachu mohlo to bejt všechno jináč
+
+R.:
+Slzy tvý mámy šedivý stékají na polštář
+Kdo tě zná, se vůbec nediví, že stárne její tvář
+Nečekej úsměv od ženy, který jsi všechno vzal
+Jen pro tvý touhy zborcený,
+léta ztracený,
+ty oči pláčou dál.
+
+
+Když jsi vyšel ven, ze žalářních vrat
+Možná, že jsi tenkrát chtěl znovu začínat
+Poctivejma rukama, jako správnej chlap
+snad se někdo ušklíb jen, že jsi křivě šláp,
+křivě šláp
+
+I když byl někdo k tobě krutej
+Proč jsi znovu začal mezi svejma
+Tvůj pocit křivdy se pak těžko smejvá
+Když hledáš vinu vždycky jenom v druhejch. 
+
+
+Ref.:...
+Slzy tvý mámy šedivý stékají na polštář
+Kdo tě zná, se vůbec nediví, že stárne její tvář
+Nečekej úsměv od ženy, který jsi všechno vzal
+Vrať jí ty touhy zborcený,
+ať pro léta ztracený
+nemusí plakat dál.
