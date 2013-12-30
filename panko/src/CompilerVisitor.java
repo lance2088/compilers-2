@@ -135,6 +135,91 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                 return ret;
         }
 
+        //TODO type 
+    	//TODO block 
+    	//TODO Refactor with visitAssign 
+    	//PAN TYPE NAME rvalue                            # Declare
+        @Override
+        public CodeFragment visitDeclare(pankoParser.DeclareContext ctx) {
+            CodeFragment value = visit(ctx.rvalue());
+            String mem_register;
+            String code_stub = "";
+
+            String identifier = ctx.NAME().getText();
+            if (!mem.containsKey(identifier)) {
+                    mem_register = this.generateNewRegister();
+                    code_stub = "<mem_register> = alloca i32\n";
+                    mem.put(identifier, mem_register);
+            } else {
+                    mem_register = mem.get(identifier);
+                    System.err.println(String.format("Warning: (PAN) identifier '%s' already exists", identifier));
+            }
+            ST template = new ST(
+                    "<value_code>" + 
+                    code_stub + 
+                    "store i32 <value_register>, i32* <mem_register>\n"
+            );
+            template.add("value_code", value);
+            template.add("value_register", value.getRegister());
+            template.add("mem_register", mem_register);
+            CodeFragment ret = new CodeFragment();
+            ret.addCode(template.render());
+            ret.setRegister(value.getRegister());
+            return ret;
+        }
+
+        //TODO type 
+    	//TODO block 
+        //TODO Refactor with visitDeclare
+        //NAMOTAJ NAME rvalue                            # Assign
+        @Override
+        public CodeFragment visitAssign(pankoParser.AssignContext ctx) {
+                CodeFragment value = visit(ctx.rvalue());
+                String mem_register;
+                String code_stub = "";
+
+                String identifier = ctx.NAME().getText();
+                if (!mem.containsKey(identifier)) {
+                        mem_register = this.generateNewRegister();
+                        code_stub = "<mem_register> = alloca i32\n";
+                        mem.put(identifier, mem_register);
+                        System.err.println(String.format("Warning: (NAMOTAJ) identifier '%s' doesn't exists", identifier));
+                } else {
+                        mem_register = mem.get(identifier);
+                }
+                ST template = new ST(
+                        "<value_code>" + 
+                        code_stub + 
+                        "store i32 <value_register>, i32* <mem_register>\n"
+                );
+                template.add("value_code", value);
+                template.add("value_register", value.getRegister());
+                template.add("mem_register", mem_register);
+                CodeFragment ret = new CodeFragment();
+                ret.addCode(template.render());
+                ret.setRegister(value.getRegister());
+                return ret;
+        }
+        
+        //TODO functions 
+        @Override
+        public CodeFragment visitVar(pankoParser.VarContext ctx) {
+                String id = ctx.NAME().getText();
+                CodeFragment code = new CodeFragment();
+                String register = generateNewRegister();
+                if (!mem.containsKey(id)) {
+                        System.err.println(String.format("Warning: (NAME) identifier '%s' doesn't exists", id));
+                        code.addCode(String.format("%s = add i32 0, 0\n", register));
+
+                } else {
+                        String pointer = mem.get(id);
+                        code.addCode(String.format("%s = load i32* %s\n", register, pointer));
+                }
+                code.setRegister(register);
+                return code;
+        }
+
+        //TODO type 
     	public CodeFragment generateConstant(String value){
             CodeFragment code = new CodeFragment();
             String register = generateNewRegister();
@@ -143,6 +228,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
             return code;
     	}
     	
+    	//TODO type 
         public CodeFragment generateBinaryOperatorCodeFragment(CodeFragment left, CodeFragment right, Integer operator) {
                 String code_stub = "<ret> = <instruction> i32 <left_val>, <right_val>\n";
                 String instruction = "or";
@@ -201,6 +287,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         
         }
         
+        //TODO type 
         public CodeFragment generateUnaryOperatorCodeFragment(CodeFragment code, Integer operator) {
                 if (operator == pankoParser.ADD) {
                         return code;
@@ -258,34 +345,6 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                         visit(ctx.rvalue(1)),
                         ctx.op.getType()
                 );
-        }
-        
-        @Override
-        public CodeFragment visitAssign(pankoParser.AssignContext ctx) {
-                CodeFragment value = visit(ctx.rvalue());
-                String mem_register;
-                String code_stub = "";
-
-                String identifier = ctx.lvalue().getText();
-                if (!mem.containsKey(identifier)) {
-                        mem_register = this.generateNewRegister();
-                        code_stub = "<mem_register> = alloca i32\n";
-                        mem.put(identifier, mem_register);
-                } else {
-                        mem_register = mem.get(identifier);
-                }
-                ST template = new ST(
-                        "<value_code>" + 
-                        code_stub + 
-                        "store i32 <value_register>, i32* <mem_register>\n"
-                );
-                template.add("value_code", value);
-                template.add("value_register", value.getRegister());
-                template.add("mem_register", mem_register);
-                CodeFragment ret = new CodeFragment();
-                ret.addCode(template.render());
-                ret.setRegister(value.getRegister());
-                return ret;
         }
 
         @Override 

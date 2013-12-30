@@ -67,7 +67,7 @@ Resembles function call.
 Note that VALUE_EXPRESSION could be recursive. And only VALUE_EXPRESSION is recursive. 
 
 VARIABLE_DECLARATION with keyword PAN:
-PAN [variable_type] [variable_name] 
+PAN [variable_type] [variable_name] [RVALUE=initial_value] 
 where [variable_type] is a string from SET_TYPES
 and [variable_name] is a string from SET_USER
 
@@ -156,8 +156,10 @@ Described by the set SET_USER
 
 6.1.2.1 Scopes of identifiers
 Scope is made up with double space indentation as in Python: 
-PAN INT in_main_scope
-  PAN INT in_sub_scope
+
+For example: 
+PAN INT in_main_scope 42
+  PAN INT in_sub_scope 47 
 PRIMOTAJ in_sub_scope SUCHY PES this line makes error as PANKO in_sub_scope is no more defined
 
 It is allowed to declare variable / function with same name but a warning is thrown. 

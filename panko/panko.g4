@@ -7,6 +7,8 @@ statements: statement (NEWLINE statement)*;
 statement: 
      SUCHY .*?                                          # Suchy
      | VYMOTAJ rvalue                                   # Vymotaj   
+     | PAN TYPE NAME rvalue                            # Declare
+     | NAMOTAJ NAME rvalue                            # Assign
      |                                                 # Emp 
      ;
 
@@ -19,10 +21,12 @@ rvalue:
      | PIPKOS                                           # Pipkos
      | FAJNE                                            # Fajne
      | TISIC                                            # Tisic
+     | NAME                                            # Var
      ;
      
 anything: ~('\n')*;
 NAME: [a-z][a-z0-9]*; 
+TYPE: 'INT' | 'FLOAT' | 'CHAR';
 
 INT: DIGIT+;
 FLOAT: DIGIT+ '.' DIGIT*;
@@ -44,6 +48,8 @@ FOR: 'POCHIPUJ';
 
 SUCHY: 'SUCHY'; 
 VYMOTAJ: 'VYMOTAJ'; 
+PAN: 'PAN'; 
+NAMOTAJ: 'NAMOTAJ'; 
 
 PIPKOS: 'PIPKOS'; 
 FAJNE: 'FAJNE';
