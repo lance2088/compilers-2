@@ -1,8 +1,10 @@
 import java.util.HashMap;
 import java.util.Map;
+
+import org.antlr.v4.runtime.misc.NotNull;
 import org.stringtemplate.v4.*;
 
-public class CompilerVisitor extends calculatorBaseVisitor<CodeFragment> {
+public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         private Map<String, String> mem = new HashMap<String, String>();
         private int labelIndex = 0;
         private int registerIndex = 0;
@@ -16,36 +18,111 @@ public class CompilerVisitor extends calculatorBaseVisitor<CodeFragment> {
         }
 
         @Override
-        public CodeFragment visitAssign(calculatorParser.AssignContext ctx) {
-                CodeFragment value = visit(ctx.expression());
-                String mem_register;
-                String code_stub = "";
+        public CodeFragment visitInit(pankoParser.InitContext ctx) {
+                CodeFragment body = visit(ctx.statements());
 
-                String identifier = ctx.lvalue().getText();
-                if (!mem.containsKey(identifier)) {
-                        mem_register = this.generateNewRegister();
-                        code_stub = "<mem_register> = alloca i32\n";
-                        mem.put(identifier, mem_register);
-                } else {
-                        mem_register = mem.get(identifier);
-                }
                 ST template = new ST(
-                        "<value_code>" + 
-                        code_stub + 
-                        "store i32 <value_register>, i32* <mem_register>\n"
+                        "declare i32 @printInt(i32)\n" + 
+                        "declare i32 @iexp(i32, i32)\n" + 
+                        "define i32 @main() {\n" + 
+                        "start:\n" + 
+                        "<body_code>" + 
+                        "ret i32 0\n" +
+                        "}\n"
                 );
-                template.add("value_code", value);
-                template.add("value_register", value.getRegister());
-                template.add("mem_register", mem_register);
-                CodeFragment ret = new CodeFragment();
-                ret.addCode(template.render());
-                ret.setRegister(value.getRegister());
-                return ret;
+                template.add("body_code", body);
+
+                CodeFragment code = new CodeFragment();
+                code.addCode(template.render());
+                code.setRegister(body.getRegister());
+                return code;
+        }
+        
+        @Override
+        public CodeFragment visitStatements(pankoParser.StatementsContext ctx) {
+                CodeFragment code = new CodeFragment();
+                for(pankoParser.StatementContext s: ctx.statement()) {
+                        CodeFragment statement = visit(s);
+                        code.addCode(statement);
+                        code.setRegister(statement.getRegister());
+                }
+                return code;
         }
 
         @Override
-        public CodeFragment visitPrint(calculatorParser.PrintContext ctx) {
-                CodeFragment code = visit(ctx.expression());
+    	public CodeFragment visitMod(@NotNull pankoParser.ModContext ctx){
+            return generateBinaryOperatorCodeFragment(
+                    visit(ctx.rvalue(0)),
+                    visit(ctx.rvalue(1)),
+                    ctx.op.getType()
+            );
+    	}
+
+        @Override
+    	public CodeFragment visitExp(@NotNull pankoParser.ExpContext ctx){
+            return generateBinaryOperatorCodeFragment(
+                    visit(ctx.rvalue(0)),
+                    visit(ctx.rvalue(1)),
+                    ctx.op.getType()
+            );
+    	}
+
+        @Override
+    	public CodeFragment visitMul(@NotNull pankoParser.MulContext ctx){
+            return generateBinaryOperatorCodeFragment(
+                    visit(ctx.rvalue(0)),
+                    visit(ctx.rvalue(1)),
+                    ctx.op.getType()
+            );
+    	}
+        
+        @Override
+    	public CodeFragment visitAdd(@NotNull pankoParser.AddContext ctx){
+            return generateBinaryOperatorCodeFragment(
+                    visit(ctx.rvalue(0)),
+                    visit(ctx.rvalue(1)),
+                    ctx.op.getType()
+            );
+    	}
+        
+        @Override
+    	public CodeFragment visitPipkos(@NotNull pankoParser.PipkosContext ctx){
+        	return generateConstant("0"); 
+        }
+        
+        @Override
+    	public CodeFragment visitFajne(@NotNull pankoParser.FajneContext ctx){
+        	return generateConstant("1"); 
+        }
+
+        @Override
+    	public CodeFragment visitTisic(@NotNull pankoParser.TisicContext ctx){
+            return generateConstant("2147483647"); 
+    	}
+
+        @Override
+        public CodeFragment visitInt(pankoParser.IntContext ctx) {
+        	return generateConstant(ctx.INT().getText()); 
+        }
+        
+        @Override
+    	public CodeFragment visitAnything(@NotNull pankoParser.AnythingContext ctx){
+    		return new CodeFragment(); 
+    	}
+        
+        @Override
+    	public CodeFragment visitSuchy(@NotNull pankoParser.SuchyContext ctx){
+            return new CodeFragment();
+    	}
+        
+        @Override
+    	public CodeFragment visitEmp(@NotNull pankoParser.EmpContext ctx){
+            return new CodeFragment();
+    	}
+
+    	@Override
+        public CodeFragment visitVymotaj(pankoParser.VymotajContext ctx) {
+                CodeFragment code = visit(ctx.rvalue());
                 ST template = new ST(
                         "<value_code>" + 
                         "call i32 @printInt (i32 <value>)\n"
@@ -58,29 +135,40 @@ public class CompilerVisitor extends calculatorBaseVisitor<CodeFragment> {
                 return ret;
         }
 
+    	public CodeFragment generateConstant(String value){
+            CodeFragment code = new CodeFragment();
+            String register = generateNewRegister();
+            code.setRegister(register);
+            code.addCode(String.format("%s = add i32 0, %s\n", register, value));
+            return code;
+    	}
+    	
         public CodeFragment generateBinaryOperatorCodeFragment(CodeFragment left, CodeFragment right, Integer operator) {
                 String code_stub = "<ret> = <instruction> i32 <left_val>, <right_val>\n";
                 String instruction = "or";
                 switch (operator) {
-                        case calculatorParser.ADD:
+                        case pankoParser.ADD:
                                 instruction = "add";
                                 break;
-                        case calculatorParser.SUB:
+                        case pankoParser.SUB:
                                 instruction = "sub";
                                 break;
-                        case calculatorParser.MUL:
+                        case pankoParser.MUL:
                                 instruction = "mul";
                                 break;
-                        case calculatorParser.DIV:
+                        case pankoParser.DIV:
                                 instruction = "sdiv";
                                 break;
-                        case calculatorParser.EXP:
+                        case pankoParser.MOD:
+                            instruction = "srem";
+                            break;
+                        case pankoParser.EXP:
                                 instruction = "@iexp";
                                 code_stub = "<ret> = call i32 <instruction>(i32 <left_val>, i32 <right_val>)\n";
                                 break;
-                        case calculatorParser.AND:
+                        case pankoParser.AND:
                                 instruction = "and";
-                        case calculatorParser.OR:
+                        case pankoParser.OR:
                                 ST temp = new ST(
                                         "<r1> = icmp ne i32 \\<left_val>, 0\n" +
                                         "<r2> = icmp ne i32 \\<right_val>, 0\n" +
@@ -114,16 +202,16 @@ public class CompilerVisitor extends calculatorBaseVisitor<CodeFragment> {
         }
         
         public CodeFragment generateUnaryOperatorCodeFragment(CodeFragment code, Integer operator) {
-                if (operator == calculatorParser.ADD) {
+                if (operator == pankoParser.ADD) {
                         return code;
                 }
 
                 String code_stub = "";
                 switch(operator) {
-                        case calculatorParser.SUB:
+                        case pankoParser.SUB:
                                 code_stub = "<ret> = sub i32 0, <input>\n";
                                 break;
-                        case calculatorParser.NOT:
+                        case pankoParser.NOT:
                                 ST temp = new ST(
                                         "<r> = icmp eq i32 \\<input>, 0\n" + 
                                         "\\<ret> = zext i1 <r> to i32\n"
@@ -144,83 +232,70 @@ public class CompilerVisitor extends calculatorBaseVisitor<CodeFragment> {
                 return ret;
                 
         }
-
-        @Override
-        public CodeFragment visitAdd(calculatorParser.AddContext ctx) {
-                return generateBinaryOperatorCodeFragment(
-                        visit(ctx.expression(0)),
-                        visit(ctx.expression(1)),
-                        ctx.op.getType()
-                );
-        }
-
+    	
+    	/*0
         @Override 
-        public CodeFragment visitMul(calculatorParser.MulContext ctx) {
-                return generateBinaryOperatorCodeFragment(
-                        visit(ctx.expression(0)),
-                        visit(ctx.expression(1)),
-                        ctx.op.getType()
-                );
-        }
-
-        @Override 
-        public CodeFragment visitExp(calculatorParser.ExpContext ctx) {
-                return generateBinaryOperatorCodeFragment(
-                        visit(ctx.expression(0)),
-                        visit(ctx.expression(1)),
-                        ctx.op.getType()
-                );
-        }
-
-        @Override
-        public CodeFragment visitPar(calculatorParser.ParContext ctx) {
-                return visit(ctx.expression());
-        }
-
-
-        @Override
-        public CodeFragment visitUna(calculatorParser.UnaContext ctx) {
+        public CodeFragment visitNot(pankoParser.NotContext ctx) {
                 return generateUnaryOperatorCodeFragment(
-                        visit(ctx.expression()),
+                        visit(ctx.rvalue()),
                         ctx.op.getType()
                 );
         }
 
         @Override
-        public CodeFragment visitVar(calculatorParser.VarContext ctx) {
-                String id = ctx.STRING().getText();
-                CodeFragment code = new CodeFragment();
-                String register = generateNewRegister();
-                String pointer = "!\"Unknown identifier\"";
-                if (!mem.containsKey(id)) {
-                        System.err.println(String.format("Error: identifier '%s' does not exists", id));
-
-                } else {
-                        pointer = mem.get(id);
-                }
-                code.addCode(String.format("%s = load i32* %s\n", register, pointer));
-                code.setRegister(register);
-                return code;
+        public CodeFragment visitAnd(pankoParser.AndContext ctx) {
+                return generateBinaryOperatorCodeFragment(
+                        visit(ctx.rvalue(0)),
+                        visit(ctx.rvalue(1)),
+                        ctx.op.getType()
+                );
         }
 
         @Override
-        public CodeFragment visitInt(calculatorParser.IntContext ctx) {
-                String value = ctx.INT().getText();
-                CodeFragment code = new CodeFragment();
-                String register = generateNewRegister();
-                code.setRegister(register);
-                code.addCode(String.format("%s = add i32 0, %s\n", register, value));
-                return code;
+        public CodeFragment visitOr(pankoParser.OrContext ctx) {
+                return generateBinaryOperatorCodeFragment(
+                        visit(ctx.rvalue(0)),
+                        visit(ctx.rvalue(1)),
+                        ctx.op.getType()
+                );
+        }
+        
+        @Override
+        public CodeFragment visitAssign(pankoParser.AssignContext ctx) {
+                CodeFragment value = visit(ctx.rvalue());
+                String mem_register;
+                String code_stub = "";
+
+                String identifier = ctx.lvalue().getText();
+                if (!mem.containsKey(identifier)) {
+                        mem_register = this.generateNewRegister();
+                        code_stub = "<mem_register> = alloca i32\n";
+                        mem.put(identifier, mem_register);
+                } else {
+                        mem_register = mem.get(identifier);
+                }
+                ST template = new ST(
+                        "<value_code>" + 
+                        code_stub + 
+                        "store i32 <value_register>, i32* <mem_register>\n"
+                );
+                template.add("value_code", value);
+                template.add("value_register", value.getRegister());
+                template.add("mem_register", mem_register);
+                CodeFragment ret = new CodeFragment();
+                ret.addCode(template.render());
+                ret.setRegister(value.getRegister());
+                return ret;
         }
 
         @Override 
-        public CodeFragment visitBlock(calculatorParser.BlockContext ctx) {
+        public CodeFragment visitBlock(pankoParser.BlockContext ctx) {
                 return visit(ctx.statements());
         }
 
         @Override 
-        public CodeFragment visitIf(calculatorParser.IfContext ctx) {
-                CodeFragment condition = visit(ctx.expression());
+        public CodeFragment visitIf(pankoParser.IfContext ctx) {
+                CodeFragment condition = visit(ctx.rvalue());
                 CodeFragment statement_true = visit(ctx.statement(0));
                 CodeFragment statement_false = visit(ctx.statement(1));
 
@@ -256,8 +331,8 @@ public class CompilerVisitor extends calculatorBaseVisitor<CodeFragment> {
         }
 
         @Override
-        public CodeFragment visitWhile(calculatorParser.WhileContext ctx) {
-                CodeFragment condition = visit(ctx.expression());
+        public CodeFragment visitWhile(pankoParser.WhileContext ctx) {
+                CodeFragment condition = visit(ctx.rvalue());
                 CodeFragment body = visit(ctx.statement());
                 
                 ST template = new ST(
@@ -289,48 +364,9 @@ public class CompilerVisitor extends calculatorBaseVisitor<CodeFragment> {
         }
         
         @Override
-        public CodeFragment visitDo(calculatorParser.DoContext ctx) {
-                CodeFragment condition = visit(ctx.expression());
-                CodeFragment body = visit(ctx.statement());
-                
-                ST template = new ST(
-                        "br label %<body_label>\n" + 
-                        "<cmp_label>:\n" + 
-                        "<condition_code>" +
-                        "<cmp_register> = icmp ne i32 <condition_register>, 0\n" + 
-                        "br i1 <cmp_register>, label %<body_label>, label %<end_label>\n" + 
-                        "<body_label>:\n" + 
-                        "<body_code>" + 
-                        "br label %<cmp_label>\n" + 
-                        "<end_label>:\n" + 
-                        "<ret> = add i32 0, 0\n"
-                );
-                template.add("cmp_label", generateNewLabel());
-                template.add("condition_code", condition);
-                template.add("cmp_register", generateNewRegister());
-                template.add("condition_register", condition.getRegister());
-                template.add("body_label", generateNewLabel());
-                template.add("end_label", generateNewLabel());
-                template.add("body_code", body);
-                String end_register = generateNewRegister();
-                template.add("ret", end_register);
-                
-                CodeFragment ret = new CodeFragment();
-                ret.addCode(template.render());
-                ret.setRegister(end_register);
-                return ret;
-        }
-        
-        /**
-       najprv=statement FOR_SEP 
-       podmienka=expression FOR_SEP 
-       potom=statement FOR_END 
-       motaj=statement		
-         */
-        @Override
-        public CodeFragment visitFor(calculatorParser.ForContext ctx) {
+        public CodeFragment visitFor(pankoParser.ForContext ctx) {
                 CodeFragment statement_najprv = visit(ctx.statement(0));
-                CodeFragment condition = visit(ctx.expression());
+                CodeFragment condition = visit(ctx.rvalue());
                 CodeFragment statement_potom = visit(ctx.statement(1));
                 CodeFragment statement_motaj = visit(ctx.statement(2));
                 
@@ -366,66 +402,9 @@ public class CompilerVisitor extends calculatorBaseVisitor<CodeFragment> {
                 return ret;
         }
 
-        @Override 
-        public CodeFragment visitNot(calculatorParser.NotContext ctx) {
-                return generateUnaryOperatorCodeFragment(
-                        visit(ctx.expression()),
-                        ctx.op.getType()
-                );
-        }
-
         @Override
-        public CodeFragment visitAnd(calculatorParser.AndContext ctx) {
-                return generateBinaryOperatorCodeFragment(
-                        visit(ctx.expression(0)),
-                        visit(ctx.expression(1)),
-                        ctx.op.getType()
-                );
-        }
-
-        @Override
-        public CodeFragment visitOr(calculatorParser.OrContext ctx) {
-                return generateBinaryOperatorCodeFragment(
-                        visit(ctx.expression(0)),
-                        visit(ctx.expression(1)),
-                        ctx.op.getType()
-                );
-        }
-
-        @Override
-        public CodeFragment visitInit(calculatorParser.InitContext ctx) {
-                CodeFragment body = visit(ctx.statements());
-
-                ST template = new ST(
-                        "declare i32 @printInt(i32)\n" + 
-                        "declare i32 @iexp(i32, i32)\n" + 
-                        "define i32 @main() {\n" + 
-                        "start:\n" + 
-                        "<body_code>" + 
-                        "ret i32 0\n" +
-                        "}\n"
-                );
-                template.add("body_code", body);
-
-                CodeFragment code = new CodeFragment();
-                code.addCode(template.render());
-                code.setRegister(body.getRegister());
-                return code;
-        }
-        
-        @Override
-        public CodeFragment visitStatements(calculatorParser.StatementsContext ctx) {
-                CodeFragment code = new CodeFragment();
-                for(calculatorParser.StatementContext s: ctx.statement()) {
-                        CodeFragment statement = visit(s);
-                        code.addCode(statement);
-                        code.setRegister(statement.getRegister());
-                }
-                return code;
-        }
-
-        @Override
-        public CodeFragment visitEmp(calculatorParser.EmpContext ctx) {
+        public CodeFragment visitEmp(pankoParser.EmpContext ctx) {
                 return new CodeFragment();
         }
+        */
 }

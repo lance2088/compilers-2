@@ -1,4 +1,3 @@
-
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.Trees;
@@ -21,23 +20,13 @@ public class Compiler {
         if ( args.length>0 ) inputFile = args[0];
         InputStream is = System.in;
         if ( inputFile!=null ) is = new FileInputStream(inputFile);
+        
         ANTLRInputStream input = new ANTLRInputStream(is);
-        
-        calculatorLexer lexer = new calculatorLexer(input);
-        
-        /*// If uncommented then no code is generated. 
-        out.println("Tokens:");
-        for(Token t : lexer.getAllTokens()){
-        	out.println("  '" + t.getText() + "'");
-        }*/
+        pankoLexer lexer = new pankoLexer(input);
         
         CommonTokenStream tokens = new CommonTokenStream(lexer);
-        calculatorParser parser = new calculatorParser(tokens);
-        
+        pankoParser parser = new pankoParser(tokens);
         ParseTree tree = parser.init(); // parse
-
-        out.println("Tree:"); 
-        out.println(Trees.toStringTree(tree));
         
         CompilerVisitor eval = new CompilerVisitor();
         CodeFragment code = eval.visit(tree);

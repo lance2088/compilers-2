@@ -5,22 +5,23 @@ init: statements;
 statements: statement (NEWLINE statement)*;
 
 statement: 
-     SUCHY anything                                     # Suchy
-     | VYMOTAJ rvalue                                   # Vymotaj    
+     SUCHY .*?                                          # Suchy
+     | VYMOTAJ rvalue                                   # Vymotaj   
+     |                                                 # Emp 
      ;
 
 rvalue:
-     op=EXP<assoc=right> rvalue rvalue                # Exp
-     | rvalue op=(DIV|MUL) rvalue rvalue                # Mul
-     | rvalue op=(ADD|SUB) rvalue rvalue                # Add
-     | rvalue op=MOD rvalue rvalue                      # Mod
+     op=EXP<assoc=right> rvalue rvalue                 # Exp
+     | op=(DIV|MUL) rvalue rvalue                      # Mul
+     | op=(ADD|SUB) rvalue rvalue                      # Add
+     | op=MOD rvalue rvalue                            # Mod
      | INT                                              # Int
      | PIPKOS                                           # Pipkos
      | FAJNE                                            # Fajne
-     | TISIC                                            # Tisic 
+     | TISIC                                            # Tisic
      ;
      
-anything: .*?;
+anything: ~('\n')*;
 NAME: [a-z][a-z0-9]*; 
 
 INT: DIGIT+;
