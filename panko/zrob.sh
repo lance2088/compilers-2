@@ -11,6 +11,8 @@ cd ..
 echo "=========== SKOMPILUJ do LLVM ===========" 
 cd bin
 java Compiler < ../$1.panko > ../llvm/$1.ll
+echo "  --compiler.out"
+less compiler.out | sed 's/(/\n/g'
 cd ..
 echo "=========== ZOPTIMALIZUJ ===========" 
 opt-2.9 -S -std-compile-opts llvm/$1.ll > llvm/$1.optimized.ll

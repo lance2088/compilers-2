@@ -214,35 +214,26 @@ This is easy as all valid types are in SET_TYPES.
 
 == 11 Tree Type Computations == 
 
-CONDITION_VALUE := [PIPKOS, FAJNE] 
-is kind of CONDITION_EXPRESSION
+Conditions are evaluated as in the C family of languages. So only 0 is FALSE value and all other values are TRUE. Boolean operations are special operations on INT. All VALUE_EXPRESSION-s are mapped to BOOLEAN_VALUE is necessary in the way mentioned previously.  
+
+BOOLEAN_VALUE := [PIPKOS, FAJNE] 
+is kind of RVALUE
+
+[LOGICAL_OPERATOR] [operand]* 
+where LOGICAL_OPERATOR := [OR, AND, NOT]
+and operand is BOOLEAN_VALUE
+Note that is enough for us to implement only NAND, but we are compassionate about our programmers (users). 
 
 COMPARISON
 [COMPARISON_OPERATOR] [operand]*
 where COMPARISON_OPERATOR := [EQUAL, SMALLER]
-
-CONDITION_EXPRESSION 
-[LOGICAL_OPERATOR] [operand]* 
-where LOGICAL_OPERATOR := [OR, AND, NOT]
-and operand is CONDITION_VALUE or COMPARISON
-Note that is enough to implement only NAND, but we are compassionate about our programmers (users). 
-
-CONDITION_EXPRESSION and VALUE_EXPRESSION are not recursive. VALUE_EXPRESSION could be passed to CONDITION_EXPRESSION but not otherwise. 
- 
-and nothing else is a CONDITION_EXPRESSION
+Note that greater, smaller or equal and all the other comparison operators are not necessary. 
 
 IF and ELSE: 
-AGE? [CONDITION_EXPRESSION] 
+AGE? [BOOLEAN_VALUE] 
   SUCHY PES blok 1  
 PIVO
   SUCHY PES blok 2
-
-BREAK loop control: 
-MAM PASS
-Note that it's enough to write MAM. But who on earth writes MAM without PASS? 
-
-CONTINUE loop control:
-CHILL
 
 WHILE LOOP: 
 MACKAJ [CONDITION_EXPRESSION] 
@@ -250,8 +241,15 @@ MACKAJ [CONDITION_EXPRESSION]
   
 FOR LOOP: 
 POCHIPUJ [variable_name] [VALUE_EXPRESSION]
-  SUCHY PES looping while variable_name SMALLER integer_value 
+  SUCHY PES looping while variable_name SMALLER integer_value (VALUE_EXPRESSION) 
   SUCHY PES PRIMOTAJ integer_value
+
+BREAK loop control: 
+MAM PASS
+Note that it's enough to write MAM. But who on earth writes MAM without PASS? 
+
+CONTINUE loop control:
+CHILL
 
 == 12 Special ==
 Read from stdin: 

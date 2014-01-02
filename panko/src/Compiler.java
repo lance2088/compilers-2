@@ -32,6 +32,8 @@ public class Compiler {
         CodeFragment code = eval.visit(tree);
         System.out.print(code.toString());
         
+        out.println("TREE: " + tree.toStringTree());
+        
         out.close(); 
     }
 }
