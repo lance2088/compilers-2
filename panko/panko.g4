@@ -6,32 +6,44 @@ statements: statement (NEWLINE statement)*;
 
 statement: 
      SUCHY .*?                                         # Suchy
-     | PAN TYPE NAME rvalue                            # Declare
-     | NAMOTAJ NAME rvalue                             # Assign 
+     | MEGA funkcia                                   # Main
+     | funkcia                                        # Function
+     | PAN TYPE NAME rexpression                            # Declare
+     | NAMOTAJ NAME rexpression                             # Assign 
      | BLOCK_START statements BLOCK_END                # Block
-     | IF rvalue NEWLINE tr=statement (NEWLINE ELSE NEWLINE fa=statement)?     # If
-     | WHILE rvalue NEWLINE statement                          # While
-     | FOR NAME rvalue NEWLINE statement                       # For
-     | VYMOTAJ rvalue                                  # Vymotaj  
+     | IF rexpression NEWLINE tr=statement (NEWLINE ELSE NEWLINE fa=statement)?     # If
+     | WHILE rexpression NEWLINE statement                          # While
+     | FOR NAME rexpression NEWLINE statement                       # For
+     | VYMOTAJ rexpression                                  # Vymotaj  
      |                                                 # Emp 
      ;
 
+funkcia: 
+    MOTAC TYPE NAME (TYPE NAME)* NEWLINE 
+    (statements NEWLINE)?
+    VYPAPAJ rexpression NEWLINE
+    ;                             
+
 rvalue:
-     op=EXP<assoc=right> rvalue rvalue                 # Exp
-     | op=(DIV|MUL) rvalue rvalue                      # Mul
-     | op=(ADD|SUB) rvalue rvalue                      # Add
-     | op=MOD rvalue rvalue                            # Mod
-     | op=OR rvalue rvalue                             # Or
-     | op=AND rvalue rvalue                            # And
-     | op=NOT rvalue                                   # Not
-     | op=EQUAL rvalue rvalue                          # Equal
-     | op=SMALLER rvalue rvalue                        # Smaller
+     op=EXP<assoc=right> rexpression rexpression                 # Exp
+     | op=(DIV|MUL) rexpression rexpression                      # Mul
+     | op=(ADD|SUB) rexpression rexpression                      # Add
+     | op=MOD rexpression rexpression                            # Mod
+     | op=OR rexpression rexpression                             # Or
+     | op=AND rexpression rexpression                            # And
+     | op=NOT rexpression                                   # Not
+     | op=EQUAL rexpression rexpression                          # Equal
+     | op=SMALLER rexpression rexpression                        # Smaller
      | INT                                             # Int
      | PIPKOS                                          # Pipkos
      | FAJNE                                           # Fajne
      | TISIC                                           # Tisic
-     | NAME                                            # Var
      ;
+     
+rexpression:
+    rvalue                                            # Value
+    | NAME (rvalue)*                                  # Name
+    ;
      
 SUCHY: 'SUCHY'; 
 
@@ -45,8 +57,11 @@ EXP: '^';
 MOD: '%'; 
 WHITESPACE: [ \t] -> skip;
 NEWLINE: '\n';
-NAMOTAJ: 'NAMOTAJ'; 
+MEGA: 'MEGA'; 
+MOTAC: 'MOTAC'; 
+VYPAPAJ: 'VYPAPAJ'; 
 PAN: 'PAN'; 
+NAMOTAJ: 'NAMOTAJ'; 
 BLOCK_START: '{';
 BLOCK_END: '}';
 IF: 'AGE?';

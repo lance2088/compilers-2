@@ -1,0 +1,61 @@
+MOTAC INT pridaj INT a INT b
+  VYPAPAJ + a b
+  
+MOTAC INT panko INT a INT b INT c INT d 
+  PAN INT result 0
+  AGE? EQUAL a 42
+    NAMOTAJ result 1
+  AGE? EQUAL b 42
+    NAMOTAJ result 2
+  AGE? EQUAL c 42
+    NAMOTAJ result 3
+  AGE? EQUAL d 42
+    NAMOTAJ result 4
+  VYPAPAJ result 
+    
+MOTAC INT factorial INT n
+  PAN INT result 1
+  AGE? SMALLER 0 n 
+    NAMOTAJ result ZMOTAJ * factorial - n 1 n
+  VYPAPAJ result
+  
+MOTAC INT fib INT n 
+  PAN INT result 1
+  AGE? SMALLER 1 n 
+    NAMOTAJ result + fib - n 1 fib - n 2
+  VYPAPAJ result 
+  
+MEGA MOTAC INT whatever
+  VYMOTAJ pridaj 42 47
+  
+  VYMOTAJ panko 0 0 0 0 
+  VYMOTAJ panko 42 0 0 0 
+  VYMOTAJ panko 0 42 0 0 
+  VYMOTAJ panko 0 0 42 0 
+  VYMOTAJ panko 0 0 0 42
+  
+  VYMOTAJ factorial 0
+  VYMOTAJ factorial 1
+  VYMOTAJ factorial 2
+  VYMOTAJ factorial 3
+  VYMOTAJ factorial 4
+  VYMOTAJ factorial 5
+  VYMOTAJ factorial 6
+  VYMOTAJ factorial 7
+  VYMOTAJ factorial 8
+  VYMOTAJ factorial 9
+  VYMOTAJ factorial 10
+  
+  VYMOTAJ fib 0
+  VYMOTAJ fib 1
+  VYMOTAJ fib 2
+  VYMOTAJ fib 3
+  VYMOTAJ fib 4
+  VYMOTAJ fib 5
+  VYMOTAJ fib 6
+  VYMOTAJ fib 7
+  VYMOTAJ fib 8
+  VYMOTAJ fib 9
+  
+  VYPAPAJ 0
+  
