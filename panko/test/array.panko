@@ -12,7 +12,7 @@ VYMOTAJ ROLKA 41 arr
 
 POCHIPUJ j 21
 {
-  NAMOTAJ buf ROLKA - 41 j arr
+  PAN INT buf ROLKA - 41 j arr
   NAMOTAJ ROLKA - 41 j arr ROLKA j arr
   NAMOTAJ ROLKA j arr buf 
 }

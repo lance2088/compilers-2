@@ -1,9 +1,9 @@
 MEGA MOTAC
-  VYMOTAJ '#'
-  VMOTAJ PAN INT pocet
- 
-  VYMOTAJ '?' 
-  VMOTAJ ROLKY pocet INT pole
+  VMOTAJ PAN INT pocet 
+  
+  WCBOOK pocet INT pole 
+  POCHIPUJ i pocet
+    VMOTAJ ROLKA i INT
   
   PAN INT pocet_minus_jedna 
   NAMOTAJ pocet_minus_jedna - pocet 1 

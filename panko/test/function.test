@@ -28,4 +28,5 @@
 55
 42
 500600
+0
 Warning: Global variable 'global' was shadowed by parameter of function 'local' (FUNCTION_DEFINE)

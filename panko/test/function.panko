@@ -22,17 +22,26 @@ MOTAC INT panko INT a INT b INT c INT d
 MOTAC INT factorial INT n
   PAN INT result 1
   AGE? SMALLER 0 n 
-    NAMOTAJ result * n ZMOTAJ factorial - n 1
+  {
+    PAN INT last ZMOTAJ factorial - n 1
+    NAMOTAJ result * last n 
+  }
   VYPAPAJ result
   
 MOTAC INT fib INT n 
   PAN INT result 1
   AGE? SMALLER 1 n 
   {
-    PAN INT fibbuf ZMOTAJ fib - n 1
-    NAMOTAJ result + fibbuf ZMOTAJ fib - n 2
+    PAN INT last1 ZMOTAJ fib - n 1
+    PAN INT last2 ZMOTAJ fib - n 2
+    NAMOTAJ result + last1 last2
   }
   VYPAPAJ result 
+  
+MOTAC INT useparams INT a INT b 
+  NAMOTAJ a - b 5
+  NAMOTAJ b - b 5
+  VYPAPAJ - a b
   
 PAN INT global 500600
 MOTAC INT local INT global
@@ -73,4 +82,6 @@ VYMOTAJ ZMOTAJ fib 9
   
 VYMOTAJ ZMOTAJ local 42
 VYMOTAJ global 
+
+VYMOTAJ ZMOTAJ useparams 42 47 
 

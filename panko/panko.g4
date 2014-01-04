@@ -9,7 +9,8 @@ TODO: Check if rexpression is parsed uniquelly (NAME
 TODO: PAN TYPE NAME (rexpression)? 
 TODO: VYMOTAJ ROLKA i  //is not a parser error
 TODO: Mal by podporovať volanie externych funkcii (napriklad C-ckovych funkcii, staci iba tie, co pouzivaju kompatobilne typy)
-TODO: refactor 
+TODO: refactor to common identifiers (function, array, variable) -- do it when types
+TODO: change main to no params / name  
 */
 
 statement: 
@@ -17,19 +18,24 @@ statement:
      | MEGA funkcia                                   # Main
      | funkcia                                        # FunctionDefine
      | WCBOOK rexpression TYPE NAME                   # ArrayDefine
-     | NAMOTAJ ROLKA rvalue NAME rexpression          # ArrayAssign 
      | FREE_PRE FREE_TEPLYCH NAME                     # ArrayDelete
      | PAN TYPE NAME rexpression                      # VariableDefine
-     | NAMOTAJ NAME rexpression                       # VariableAssign 
+     | NAMOTAJ address rexpression                    # Assign 
      | BLOCK_START statements BLOCK_END               # Block
      | IF rexpression NEWLINE tr=statement (NEWLINE ELSE NEWLINE fa=statement)?     # If
      | WHILE rexpression NEWLINE statement            # While
      | FOR NAME rexpression NEWLINE statement         # For
-     | VMOTAJ TYPE NAME                               # Vmotaj
+     | VMOTAJ TYPE address                            # Vmotaj
      | VYMOTAJ rexpression                            # Vymotaj  
      | rexpression                                    # Evaluate
      |                                                # Emp 
      ;
+
+address: 
+     NAME                                             # VariableAddress
+     | ROLKA rvalue NAME                                # ArrayAddress
+;
+  
 
 /**TODO: Disallow function definitions inside functions */
 funkcia: 
@@ -52,8 +58,7 @@ rvalue:
      | PIPKOS                                     # Pipkos
      | FAJNE                                      # Fajne
      | TISIC                                      # Tisic
-     | ROLKA rvalue NAME                          # ArrayValue 
-     | NAME                                       # VariableValue
+     | address                                    # AddressValue 
      | BAVI rvalue                                # RandomValue
      ;
      
