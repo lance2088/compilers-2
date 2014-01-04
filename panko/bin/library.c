@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h> 
 
 int printInt(int a) {
         printf("%d\n", a);
@@ -49,4 +50,12 @@ int* MALLOC(int a){
 
 int FREE(int* a){
   free(a); 
+}
+
+int SET_RANDOM(){
+  srand(time(NULL));
+}
+
+int RANDOM(int r){
+  return rand();
 }

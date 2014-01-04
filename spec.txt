@@ -288,8 +288,7 @@ PLACES [string]
 This is a shortcut to YOLO block.
 
 RANDOM_VALUE: 
-BAVI [variable_name, array_name]
-Note that evaluated on compile time. 
+BAVI [VARIABLE_NAME, ARRAY_NAME]
 
 RANDOM_CALL: 
 POHALUZ [operand]* 

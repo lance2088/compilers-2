@@ -63,10 +63,13 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                         "declare float @scanFloat()\n" + 
                         "declare i32 @iexp(i32, i32)\n" + //TODO should be native 
                         "declare i32* @MALLOC(i32)\n" +  
-                        "declare i32 @FREE(i32*)\n" +  
+                        "declare i32 @FREE(i32*)\n" + 
+                        "declare i32 @SET_RANDOM()\n" +  
+                        "declare i32 @RANDOM(i32)\n" +   
                         "<function_definitions>\n" + 
                         "define i32 @main() {\n" + 
                         "start:\n" + 
+                        "call i32 @SET_RANDOM()\n" + 
                         "<global_code>\n" + 
                         "<main_code>" +
                         "}\n"
@@ -206,6 +209,24 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         @Override
         public CodeFragment visitInt(pankoParser.IntContext ctx) {
         	return generateConstant(ctx.INT().getText()); 
+        }
+
+        //     | BAVI rvalue                                # RandomValue
+        @Override
+        public CodeFragment visitRandomValue(pankoParser.RandomValueContext ctx) {
+        	CodeFragment valueCode = visit(ctx.rvalue()); 
+        	
+    		String ret_reg = this.generateNewRegister(); 
+    		
+            ST template = new ST(
+            		"<value_code>" + 
+                    "<ret_reg> = call i32 @RANDOM(i32 <value_reg>)\n"
+            );
+            template.add("value_code", valueCode.toString());
+            template.add("value_reg", valueCode.getRegister());
+            template.add("ret_reg", ret_reg);
+            
+            return new CodeFragment(template.render(), ret_reg);
         }
         
         @Override

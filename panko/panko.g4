@@ -9,6 +9,7 @@ TODO: Check if rexpression is parsed uniquelly (NAME
 TODO: PAN TYPE NAME (rexpression)? 
 TODO: VYMOTAJ ROLKA i  //is not a parser error
 TODO: Mal by podporovať volanie externych funkcii (napriklad C-ckovych funkcii, staci iba tie, co pouzivaju kompatobilne typy)
+TODO: refactor 
 */
 
 statement: 
@@ -47,12 +48,13 @@ rvalue:
      | op=NOT rvalue                              # Not
      | op=EQUAL rvalue rvalue                     # Equal
      | op=SMALLER rvalue rvalue                   # Smaller
-     | INT                                             # Int
-     | PIPKOS                                          # Pipkos
-     | FAJNE                                           # Fajne
-     | TISIC                                           # Tisic
-     | NAME                                            # VariableValue
+     | INT                                        # Int
+     | PIPKOS                                     # Pipkos
+     | FAJNE                                      # Fajne
+     | TISIC                                      # Tisic
      | ROLKA rvalue NAME                          # ArrayValue 
+     | NAME                                       # VariableValue
+     | BAVI rvalue                                # RandomValue
      ;
      
 rexpression: 
@@ -101,6 +103,7 @@ PIPKOS: 'PIPKOS';
 FAJNE: 'FAJNE';
 TISIC: 'TISIC';
 TROSKU: 'TROSKU'; 
+BAVI: 'BAVI'; 
 
 TYPE: 'INT' | 'FLOAT' | 'CHAR';
 NAME: [a-zA-Z][a-zA-Z0-9]*;
