@@ -1,10 +1,9 @@
-WCBOOK 42 INT arr 
-NAMOTAJ ROLKA 5 arr 42
-VYMOTAJ ROLKA 5 arr
+MOTAC INT sucet INT a INT b
+  VYPAPAJ + a b
   
-POCHIPUJ i 42 
-  NAMOTAJ ROLKA i arr * i i
-POCHIPUJ i 42 
-  VYMOTAJ ROLKA i arr
+PAN INT global 2
+VYMOTAJ global
   
-PRE TEPLYCH arr 
+MEGA MOTAC INT whatever
+  VYMOTAJ ZMOTAJ sucet 42 47
+  VYPAPAJ 0

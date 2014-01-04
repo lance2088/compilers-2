@@ -8,6 +8,7 @@ statements: statement (NEWLINE statement)*;
 TODO: Check if rexpression is parsed uniquelly (NAME 
 TODO: PAN TYPE NAME (rexpression)? 
 TODO: VYMOTAJ ROLKA i  //is not a parser error
+TODO: Mal by podporovať volanie externych funkcii (napriklad C-ckovych funkcii, staci iba tie, co pouzivaju kompatobilne typy)
 */
 
 statement: 
@@ -23,6 +24,7 @@ statement:
      | IF rexpression NEWLINE tr=statement (NEWLINE ELSE NEWLINE fa=statement)?     # If
      | WHILE rexpression NEWLINE statement            # While
      | FOR NAME rexpression NEWLINE statement         # For
+     | VMOTAJ TYPE NAME                               # Vmotaj
      | VYMOTAJ rexpression                            # Vymotaj  
      | rexpression                                    # Evaluate
      |                                                # Emp 
@@ -92,6 +94,7 @@ NOT: 'NOT';
 EQUAL: 'EQUAL';
 SMALLER: 'SMALLER'; 
 
+VMOTAJ: 'VMOTAJ'; 
 VYMOTAJ: 'VYMOTAJ'; 
 
 PIPKOS: 'PIPKOS'; 

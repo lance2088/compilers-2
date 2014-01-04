@@ -33,6 +33,7 @@ public class Compiler {
         //CodeFragment header = eval.getHeader(); //functions (& extern) 
         //header.addCode(body.toString());
         System.out.print(body);
+        
         out.println("TREE: " + tree.toStringTree());
         
         out.close(); 

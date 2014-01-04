@@ -6,6 +6,11 @@ int printInt(int a) {
         return 0;
 }
 
+int printFloat(float a) {
+        printf("%f\n", a);
+        return 0;
+}
+
 int printChar(char c) {
   putc(c, stdout); 
   return 0; 
@@ -18,6 +23,25 @@ int iexp(int a, int b) {
         }
         return ret;
 }
+
+int scanInt(){
+  int result;
+  scanf("%d", &result);
+  return result; 
+}
+
+int scanChar(){
+  char result;
+  scanf("%c", &result);
+  return result; 
+}
+
+float scanFloat(){
+  float result;
+  scanf("%f", &result);
+  return result; 
+}
+
 
 int* MALLOC(int a){
   return malloc(a); 

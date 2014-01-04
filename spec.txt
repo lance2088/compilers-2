@@ -253,8 +253,9 @@ CHILL
 
 == 12 Special ==
 Read from stdin: 
-VMOTAJ [VARIABLE_DECLARATION|ARRAY_DECLARATION]
-No problem if the variable has been previously declared. 
+VMOTAJ [VARIABLE_NAME|VARIABLE_DECLARATION|ARRAY_DECLARATION]
+
+#TODO ARRAY_DECLARATION
 
 Write to stdout: 
 VYMOTAJ [variable_name|array_name|value|VALUE_EXPRESSION] 

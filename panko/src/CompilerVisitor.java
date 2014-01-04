@@ -18,6 +18,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         private Map<String, FunctionFragment> functions = new HashMap<String, FunctionFragment>();
         private boolean inFunctionDefine = false; 
         private String inFunctionName = ""; 
+        private final String FUNCTION_MAIN_NAME = "_main"; //so it cannot collide with any function name defined by user 
         
         //these variables are treated differently (they don't need to be loaded) 
         private Set<String> functionParams = new HashSet<String>(); 
@@ -42,7 +43,9 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         private String getFunctionDefinitions() {
         	String result = "";
         	for(Map.Entry<String, FunctionFragment> entry : functions.entrySet()){
-        		result += entry.getValue().code.toString(); 
+        		if(!entry.getKey().equals(FUNCTION_MAIN_NAME)){
+        			result += entry.getValue().all_code.toString();
+        		}
         	}
         	return result; 
         }
@@ -53,18 +56,33 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
 
                 ST template = new ST(
                         "declare i32 @printInt(i32)\n" + 
-                        "declare i32 @iexp(i32, i32)\n" +
+                        "declare i32 @printChar(i8)\n" + 
+                        "declare i32 @printFloat(float)\n" +
+                        "declare i32 @scanInt()\n" + 
+                        "declare i8 @scanChar()\n" + 
+                        "declare float @scanFloat()\n" + 
+                        "declare i32 @iexp(i32, i32)\n" + //TODO should be native 
                         "declare i32* @MALLOC(i32)\n" +  
                         "declare i32 @FREE(i32*)\n" +  
                         "<function_definitions>\n" + 
                         "define i32 @main() {\n" + 
                         "start:\n" + 
-                        "<body_code>" + 
-                        "ret i32 0\n" +
+                        "<global_code>\n" + 
+                        "<main_code>" +
                         "}\n"
                 );
+                
                 template.add("function_definitions", this.getFunctionDefinitions());
-                template.add("body_code", body);
+                
+                //TODO is there global context in LLVM? 
+                if(this.functions.containsKey(FUNCTION_MAIN_NAME)){
+                	template.add("global_code", body); 
+                	template.add("main_code", this.functions.get(FUNCTION_MAIN_NAME).body_code.toString());
+                }
+                else{
+                	template.add("global_code", body); 
+                	template.add("main_code", "ret i32 0\n");
+                }
 
                 CodeFragment code = new CodeFragment();
                 code.addCode(template.render());
@@ -200,6 +218,24 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
             return new CodeFragment();
     	}
 
+        //TODO type 
+        //     | VMOTAJ TYPE NAME                               # Vmotaj
+    	@Override
+        public CodeFragment visitVmotaj(pankoParser.VmotajContext ctx) {
+    		String var_name = ctx.NAME().getText(); 
+    		
+    		String in_reg = this.generateNewRegister(); 
+    		
+            ST template = new ST(
+                    "<in_reg> = call i32 @scanInt()\n"
+            );
+            template.add("in_reg", in_reg);
+            
+            CodeFragment scanCode = new CodeFragment(template.render(), in_reg);
+            
+    		return generateDefineAssign(var_name, scanCode, null, null);
+        }
+    	
     	@Override
         public CodeFragment visitVymotaj(pankoParser.VymotajContext ctx) {
                 CodeFragment code = visit(ctx.rexpression());
@@ -243,7 +279,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                     code_stub + 
                     "store i32 <value_register>, i32* <mem_register>\n"
             );
-            template.add("value_code", value);
+            template.add("value_code", value.toString());
             template.add("value_register", value.getRegister());
             template.add("mem_register", mem_register);
             CodeFragment ret = new CodeFragment();
@@ -424,11 +460,6 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         }
         
         //======================================= FUNCTIONS =========================================
-        //TODO functions 
-        @Override
-        public CodeFragment visitMain(pankoParser.MainContext ctx) {
-        	return new CodeFragment(); 
-        }
         
         /** 
     MOTAC TYPE NAME (TYPE NAME)* NEWLINE 
@@ -454,11 +485,23 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
             }
             this.registeredLocalVariables.clear(); 
         }
+
+        @Override
+        public CodeFragment visitMain(pankoParser.MainContext ctx) {
+        	if(this.functions.containsKey(FUNCTION_MAIN_NAME)){
+        		System.err.println("Warning: MEGA MOTAC '"+ctx.funkcia().NAME().get(0).getText()+"' already defined (visitMain).");
+        	}
+        	return generateFunction(ctx.funkcia(), FUNCTION_MAIN_NAME); 
+        }
         
         @Override
         public CodeFragment visitFunctionDefine(pankoParser.FunctionDefineContext ctx) {
-        	List<TerminalNode> tokens = ctx.funkcia().NAME();
-        	String fn_name = tokens.get(0).getText();
+        	return generateFunction(ctx.funkcia(), null); 
+        }
+        
+        private CodeFragment generateFunction(pankoParser.FunkciaContext ctx, String override_name){
+        	List<TerminalNode> tokens = ctx.NAME();
+        	String fn_name = (override_name == null) ? tokens.get(0).getText() : override_name;
         	
         	if(this.inFunctionDefine){
     			System.err.println("Warning: Defining function '" + fn_name + "' in function. It will be ignored. (FUNCTION_DEFINE)");
@@ -494,35 +537,31 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         		System.err.println("Warning: Function '"+fn_name+"' has same name as some variable (FUNCTION_DEFINE)");
         	}
         	
-        	CodeFragment body = (ctx.funkcia().statements() == null) ? null : visit(ctx.funkcia().statements());
-        	CodeFragment result = visit(ctx.funkcia().rexpression()); 
-        	
-        	/*
-        	define i32 @mul_add(i32 %x, i32 %y, i32 %z) {
-        		entry:
-        		  %tmp = mul i32 %x, %y
-        		  %tmp2 = add i32 %tmp, %z
-        		  ret i32 %tmp2
-        		}
-        		*/
+        	CodeFragment statementsCode = (ctx.statements() == null) ? null : visit(ctx.statements());
+        	CodeFragment returnCode = visit(ctx.rexpression()); 
+
+            ST template_body = new ST(
+                    "<body>" +
+                    "<return_code>" + 
+                    "ret i32 <return_register>\n"
+            );
+            template_body.add("body", statementsCode);
+            template_body.add("return_code", returnCode);
+            template_body.add("return_register", returnCode.getRegister());
+            
+            functionFragment.body_code = new CodeFragment(template_body.render(), returnCode.getRegister());
+            
             ST template = new ST(
                     "define i32 <llvm_name>(<code_variables>){\n" +
                     "    entry:\n" + 
-                    "<body>" +
-                    "<return_code>" + 
-                    "ret i32 <return_register>\n" +
+                    "<body_code>" + 
                     "}" + "\n"
             );
             template.add("llvm_name", functionFragment.llvm_name);
             template.add("code_variables", paramsCode);
-            template.add("body", body);
-            template.add("return_code", result);
-            template.add("return_register", result.getRegister());
+            template.add("body_code", functionFragment.body_code.toString());
             
-            CodeFragment ret = new CodeFragment(); 
-            ret.addCode(template.render());
-            ret.setRegister(result.getRegister());
-            functionFragment.code = ret; 
+            functionFragment.all_code = new CodeFragment(template.render(), returnCode.getRegister()); 
             
             //clean up parameter variables 
             unregisterLocalVariables(); 
