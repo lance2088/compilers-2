@@ -34,7 +34,7 @@ public class Compiler {
         //header.addCode(body.toString());
         System.out.print(body);
         
-        out.println("TREE: " + tree.toStringTree());
+        //out.println("TREE: " + tree.toStringTree());
         
         out.close(); 
     }
