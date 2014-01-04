@@ -3,6 +3,10 @@ echo "=========== ANTLR4 ==========="
 java -jar /home/petrzlen/bin/antlr-4.1-complete.jar panko.g4 -visitor
 mv *java src/
 mv *tokens llvm/
+echo "=========== LIBRARY =========="
+cd bin
+gcc -shared -fPIC -std=c99 library.c -o library.so
+cd ..
 echo "=========== JAVKA ===========" 
 cd src
 javac *java
@@ -19,4 +23,4 @@ opt-2.9 -S -std-compile-opts llvm/$1.ll > llvm/$1.optimized.ll
 echo "=========== MOTAJ ===========" 
 lli-2.9 -load=bin/library.so llvm/$1.optimized.ll > llvm/$1.out
 echo "=========== TEST ============" 
-diff $1.test llvm/$1.out
+diff "$1.test" llvm/$1.out
