@@ -1,8 +1,10 @@
-MOTAC INT fib INT n 
-  PAN INT result 1
-  AGE? SMALLER 1 n 
-  {
-    PAN INT fibbuf ZMOTAJ fib - n 1
-    NAMOTAJ result + fibbuf ZMOTAJ fib - n 2
-  }
-  VYPAPAJ result 
+WCBOOK 42 INT arr 
+NAMOTAJ ROLKA 5 arr 42
+VYMOTAJ ROLKA 5 arr
+  
+POCHIPUJ i 42 
+  NAMOTAJ ROLKA i arr * i i
+POCHIPUJ i 42 
+  VYMOTAJ ROLKA i arr
+  
+PRE TEPLYCH arr 

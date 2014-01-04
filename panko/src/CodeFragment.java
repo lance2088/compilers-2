@@ -6,6 +6,11 @@ public class CodeFragment {
                 this.code = "";
                 this.register = null;
         }
+        
+        public CodeFragment(String _code, String _register) {
+            this.code = _code;
+            this.register = _register;
+        }
 
         public void addCode(String code) {
                 this.code += code;

@@ -54,6 +54,8 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                 ST template = new ST(
                         "declare i32 @printInt(i32)\n" + 
                         "declare i32 @iexp(i32, i32)\n" +
+                        "declare i32* @MALLOC(i32)\n" +  
+                        "declare i32 @FREE(i32*)\n" +  
                         "<function_definitions>\n" + 
                         "define i32 @main() {\n" + 
                         "start:\n" + 
@@ -307,17 +309,118 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         }
         
         //====================================== ARRAYS =================================
+
+        //TODO NAME checks => remember type 
+        //TODO free array at the end 
+        //| WCBOOK rexpression TYPE NAME                   # ArrayDefine
         @Override
         public CodeFragment visitArrayDefine(pankoParser.ArrayDefineContext ctx) {
-        	return new CodeFragment();
+        	String arr_name = ctx.NAME().getText(); 
+        	String arr_type = ctx.TYPE().getText(); 
+        	String arr_reg = generateNewRegister();
+        	this.mem.put(arr_name, arr_reg); 
+        	
+        	String mem_reg = generateNewRegister();
+        	String size_reg = generateNewRegister(); 
+        	
+        	CodeFragment evalCountCode = visit(ctx.rexpression()); 
+        	
+        	ST template = new ST(
+        			"<eval>" + 
+        		    "<arr_reg> = alloca i32*\n" +  
+        			"<size_reg> = mul i32 4, <count_reg>\n" +
+        		    "<mem_reg> = call noalias i32* @MALLOC(i32 <size_reg>) nounwind\n" +  
+        		    "store i32* <mem_reg>, i32** <arr_reg>\n" 
+        	);
+        	template.add("eval", evalCountCode.toString());
+        	template.add("arr_reg", arr_reg);
+        	template.add("mem_reg", mem_reg);
+        	template.add("count_reg", evalCountCode.getRegister());
+        	template.add("size_reg", size_reg);
+        	
+        	return new CodeFragment(template.render(), null);
+        }
+
+        public CodeFragment generateGetIndexAddress(String arr_name, CodeFragment indexEvalCode){
+        	String arr_reg = mem.get(arr_name); 
+        	
+        	String mem_reg = generateNewRegister(); 
+        	
+        	String index_ptr_reg = generateNewRegister(); 
+        	
+        	ST template = new ST(
+        			"<index_eval>" + 
+        		    "<mem_reg> = load i32** <arr_reg>\n" +
+        		    "<index_ptr_reg> = getelementptr inbounds i32* <mem_reg>, i32 <index_reg>\n"
+        	);
+        	template.add("arr_reg", arr_reg);
+        	template.add("mem_reg", mem_reg);
+        	template.add("index_eval", indexEvalCode.toString());
+        	template.add("index_reg", indexEvalCode.getRegister());
+        	template.add("index_ptr_reg", index_ptr_reg);
+
+        	return new CodeFragment(template.render(), index_ptr_reg);
         }
         
+        //TODO NAME checks 
+        //| NAMOTAJ ROLKA rvalue NAME rexpression          # ArrayAssign 
+        @Override 
         public CodeFragment visitArrayAssign(pankoParser.ArrayAssignContext ctx) {
-        	return new CodeFragment();
+        	String arr_name = ctx.NAME().getText(); 
+        	
+        	CodeFragment getIndexAddressCode = generateGetIndexAddress(arr_name, visit(ctx.rvalue()));
+        	
+        	CodeFragment valueEvalCode = visit(ctx.rexpression()); 
+        	
+        	ST template = new ST(
+        			"<get_index_address>" +
+                    "<value_eval>" + 
+        		    "store i32 <value_reg>, i32* <index_ptr_reg>\n" 
+        	);
+        	template.add("get_index_address", getIndexAddressCode.toString());
+        	template.add("index_ptr_reg", getIndexAddressCode.getRegister());
+        	template.add("value_eval", valueEvalCode.toString());
+        	template.add("value_reg", valueEvalCode.getRegister());
+
+        	return new CodeFragment(template.render(), valueEvalCode.getRegister());
+        }
+
+        //TODO NAME checks 
+        //   | FREE NAME                                      # ArrayDelete
+        @Override 
+        public CodeFragment visitArrayDelete(pankoParser.ArrayDeleteContext ctx) {
+        	String arr_name = ctx.NAME().getText(); 
+        	String arr_reg = mem.get(arr_name); 
+        	
+        	String mem_reg = generateNewRegister(); 
+        	
+        	ST template = new ST(
+        			"<mem_reg> = load i32** <arr_reg>\n" +
+        			"call i32 @FREE(i32* <mem_reg>)\n"
+        	);
+        	template.add("arr_reg", arr_reg);
+        	template.add("mem_reg", mem_reg);
+        	
+        	return new CodeFragment(template.render(), null);
         }
         
+        //| ROLKA rvalue NAME                          # ArrayValue 
         public CodeFragment visitArrayValue(pankoParser.ArrayValueContext ctx) {
-        	return new CodeFragment();
+        	String arr_name = ctx.NAME().getText(); 
+        	
+        	CodeFragment getIndexAddressCode = generateGetIndexAddress(arr_name, visit(ctx.rvalue()));
+        	
+        	String value_reg = generateNewRegister(); 
+        	
+        	ST template = new ST(
+        			"<get_index_address>" +
+        		    "<value_reg> = load i32* <index_ptr_reg>\n" 
+        	);
+        	template.add("get_index_address", getIndexAddressCode.toString());
+        	template.add("index_ptr_reg", getIndexAddressCode.getRegister());
+        	template.add("value_reg", value_reg);
+
+        	return new CodeFragment(template.render(), value_reg);
         }
         
         //======================================= FUNCTIONS =========================================
@@ -561,9 +664,16 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                 return ret;
         }
         
+        //TODO refactor it to WHILE 
+        //TODO notworking if already defined (used before) :
+//POCHIPUJ i 42
+//  NAMOTAJ ROLKA i arr * i i
+//POCHIPUJ i 42
+//  VYMOTAJ ROLKA i arr
         @Override
         public CodeFragment visitFor(pankoParser.ForContext ctx) {
-        		String identifier = ctx.NAME().getText(); 
+        		String identifier = ctx.NAME().getText();
+        		
                 CodeFragment statement_najprv = generateDefineAssign(identifier, generateConstant("0"), null, "Warning: (POCHIPUJ-najprv) identifier '%s' already exists");
                 CodeFragment statement_motaj = visit(ctx.statement());
                 //identifier = identifier + 1

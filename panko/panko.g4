@@ -4,16 +4,21 @@ init: statements;
 
 statements: statement (NEWLINE statement)*;
 
-/**TODO: Check if rexpression is parsed uniquelly (NAME */
+/**
+TODO: Check if rexpression is parsed uniquelly (NAME 
+TODO: PAN TYPE NAME (rexpression)? 
+TODO: VYMOTAJ ROLKA i  //is not a parser error
+*/
 
 statement: 
      SUCHY .*?                                        # Suchy
      | MEGA funkcia                                   # Main
      | funkcia                                        # FunctionDefine
-     | PAN TYPE NAME rexpression                      # VariableDefine
-     | NAMOTAJ NAME rexpression                       # VariableAssign 
      | WCBOOK rexpression TYPE NAME                   # ArrayDefine
      | NAMOTAJ ROLKA rvalue NAME rexpression          # ArrayAssign 
+     | FREE_PRE FREE_TEPLYCH NAME                     # ArrayDelete
+     | PAN TYPE NAME rexpression                      # VariableDefine
+     | NAMOTAJ NAME rexpression                       # VariableAssign 
      | BLOCK_START statements BLOCK_END               # Block
      | IF rexpression NEWLINE tr=statement (NEWLINE ELSE NEWLINE fa=statement)?     # If
      | WHILE rexpression NEWLINE statement            # While
@@ -63,6 +68,8 @@ ADD: '+';
 SUB: '-';
 EXP: '^';
 MOD: '%'; 
+FREE_PRE: 'PRE';
+FREE_TEPLYCH: 'TEPLYCH'; 
 WHITESPACE: [ \t] -> skip;
 NEWLINE: '\n';
 MEGA: 'MEGA'; 
