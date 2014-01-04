@@ -1,0 +1,8 @@
+MOTAC INT fib INT n 
+  PAN INT result 1
+  AGE? SMALLER 1 n 
+  {
+    PAN INT fibbuf ZMOTAJ fib - n 1
+    NAMOTAJ result + fibbuf ZMOTAJ fib - n 2
+  }
+  VYPAPAJ result 

@@ -29,10 +29,12 @@ public class Compiler {
         ParseTree tree = parser.init(); // parse
         
         CompilerVisitor eval = new CompilerVisitor();
-        CodeFragment code = eval.visit(tree);
-        System.out.print(code.toString());
+        CodeFragment body = eval.visit(tree);
+        //CodeFragment header = eval.getHeader(); //functions (& extern) 
+        //header.addCode(body.toString());
+        System.out.print(body);
         
-        out.println("TREE: " + tree.toStringTree());
+        //out.println("TREE: " + tree.toStringTree());
         
         out.close(); 
     }
