@@ -89,8 +89,8 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         @Override
     	public CodeFragment visitMod(@NotNull pankoParser.ModContext ctx){
             return generateBinaryOperator(
-                    visit(ctx.rvalue()),
-                    visit(ctx.rexpression()),
+                    visit(ctx.rvalue(0)),
+                    visit(ctx.rvalue(1)),
                     ctx.op.getType()
             );
     	}
@@ -98,8 +98,8 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         @Override
     	public CodeFragment visitExp(@NotNull pankoParser.ExpContext ctx){
             return generateBinaryOperator(
-                    visit(ctx.rvalue()),
-                    visit(ctx.rexpression()),
+                    visit(ctx.rvalue(0)),
+                    visit(ctx.rvalue(1)),
                     ctx.op.getType()
             );
     	}
@@ -107,8 +107,8 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         @Override
     	public CodeFragment visitMul(@NotNull pankoParser.MulContext ctx){
             return generateBinaryOperator(
-                    visit(ctx.rvalue()),
-                    visit(ctx.rexpression()),
+                    visit(ctx.rvalue(0)),
+                    visit(ctx.rvalue(1)),
                     ctx.op.getType()
             );
     	}
@@ -116,8 +116,8 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         @Override
     	public CodeFragment visitAdd(@NotNull pankoParser.AddContext ctx){
             return generateBinaryOperator(
-                    visit(ctx.rvalue()),
-                    visit(ctx.rexpression()),
+                    visit(ctx.rvalue(0)),
+                    visit(ctx.rvalue(1)),
                     ctx.op.getType()
             );
     	}
@@ -126,7 +126,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         @Override 
         public CodeFragment visitNot(pankoParser.NotContext ctx) {
                 return generateUnaryOperator(
-                        visit(ctx.rexpression()),
+                        visit(ctx.rvalue()),
                         ctx.op.getType()
                 );
         }
@@ -134,8 +134,8 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         @Override
         public CodeFragment visitAnd(pankoParser.AndContext ctx) {
                 return generateBinaryOperator(
-                        visit(ctx.rvalue()),
-                        visit(ctx.rexpression()),
+                        visit(ctx.rvalue(0)),
+                        visit(ctx.rvalue(1)),
                         ctx.op.getType()
                 );
         }
@@ -143,8 +143,8 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         @Override
         public CodeFragment visitOr(pankoParser.OrContext ctx) {
                 return generateBinaryOperator(
-                        visit(ctx.rvalue()),
-                        visit(ctx.rexpression()),
+                        visit(ctx.rvalue(0)),
+                        visit(ctx.rvalue(1)),
                         ctx.op.getType()
                 );
         }
@@ -153,8 +153,8 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         @Override
         public CodeFragment visitEqual(pankoParser.EqualContext ctx) {
                 return generateBinaryOperator(
-                        visit(ctx.rvalue()),
-                        visit(ctx.rexpression()),
+                        visit(ctx.rvalue(0)),
+                        visit(ctx.rvalue(1)),
                         ctx.op.getType()
                 );
         }
@@ -162,8 +162,8 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         @Override
         public CodeFragment visitSmaller(pankoParser.SmallerContext ctx) {
                 return generateBinaryOperator(
-                        visit(ctx.rvalue()),
-                        visit(ctx.rexpression()),
+                        visit(ctx.rvalue(0)),
+                        visit(ctx.rvalue(1)),
                         ctx.op.getType()
                 );
         }
@@ -272,6 +272,11 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         	return generateDefineAssign(ctx.NAME().getText(), visit(ctx.rexpression()), "Warning: (NAMOTAJ) identifier '%s' doesn't exists", null);
         }
         
+        @Override
+        public CodeFragment visitVariableValue(pankoParser.VariableValueContext ctx) {
+        	return generateGetValue(ctx.NAME().getText()); 
+        }
+        
         public CodeFragment generateGetValue(String id){
             CodeFragment code = new CodeFragment();
             
@@ -301,11 +306,21 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         	
         }
         
+        //====================================== ARRAYS =================================
         @Override
-        public CodeFragment visitVariableValue(pankoParser.VariableValueContext ctx) {
-        	return generateGetValue(ctx.NAME().getText()); 
+        public CodeFragment visitArrayDefine(pankoParser.ArrayDefineContext ctx) {
+        	return new CodeFragment();
         }
         
+        public CodeFragment visitArrayAssign(pankoParser.ArrayAssignContext ctx) {
+        	return new CodeFragment();
+        }
+        
+        public CodeFragment visitArrayValue(pankoParser.ArrayValueContext ctx) {
+        	return new CodeFragment();
+        }
+        
+        //======================================= FUNCTIONS =========================================
         //TODO functions 
         @Override
         public CodeFragment visitMain(pankoParser.MainContext ctx) {

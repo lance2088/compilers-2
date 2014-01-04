@@ -4,12 +4,16 @@ init: statements;
 
 statements: statement (NEWLINE statement)*;
 
+/**TODO: Check if rexpression is parsed uniquelly (NAME */
+
 statement: 
      SUCHY .*?                                        # Suchy
      | MEGA funkcia                                   # Main
      | funkcia                                        # FunctionDefine
      | PAN TYPE NAME rexpression                      # VariableDefine
      | NAMOTAJ NAME rexpression                       # VariableAssign 
+     | WCBOOK rexpression TYPE NAME                   # ArrayDefine
+     | NAMOTAJ ROLKA rvalue NAME rexpression          # ArrayAssign 
      | BLOCK_START statements BLOCK_END               # Block
      | IF rexpression NEWLINE tr=statement (NEWLINE ELSE NEWLINE fa=statement)?     # If
      | WHILE rexpression NEWLINE statement            # While
@@ -27,20 +31,21 @@ funkcia:
     ;                              
 
 rvalue:
-     op=EXP<assoc=right> rvalue rexpression            # Exp
-     | op=(DIV|MUL) rvalue rexpression                 # Mul
-     | op=(ADD|SUB) rvalue rexpression                 # Add
-     | op=MOD rvalue rexpression                       # Mod
-     | op=OR rvalue rexpression                        # Or
-     | op=AND rvalue rexpression                       # And
-     | op=NOT rexpression                              # Not
-     | op=EQUAL rvalue rexpression                     # Equal
-     | op=SMALLER rvalue rexpression                   # Smaller
+     op=EXP<assoc=right> rvalue rvalue            # Exp
+     | op=(DIV|MUL) rvalue rvalue                 # Mul
+     | op=(ADD|SUB) rvalue rvalue                 # Add
+     | op=MOD rvalue rvalue                       # Mod
+     | op=OR rvalue rvalue                        # Or
+     | op=AND rvalue rvalue                       # And
+     | op=NOT rvalue                              # Not
+     | op=EQUAL rvalue rvalue                     # Equal
+     | op=SMALLER rvalue rvalue                   # Smaller
      | INT                                             # Int
      | PIPKOS                                          # Pipkos
      | FAJNE                                           # Fajne
      | TISIC                                           # Tisic
      | NAME                                            # VariableValue
+     | ROLKA rvalue NAME                          # ArrayValue 
      ;
      
 rexpression: 
@@ -66,6 +71,8 @@ VYPAPAJ: 'VYPAPAJ';
 ZMOTAJ: 'ZMOTAJ'; 
 PAN: 'PAN'; 
 NAMOTAJ: 'NAMOTAJ'; 
+WCBOOK: 'WCBOOK'; 
+ROLKA: 'ROLKA'; 
 BLOCK_START: '{';
 BLOCK_END: '}';
 IF: 'AGE?';
