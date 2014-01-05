@@ -46,5 +46,13 @@ POCHIPUJ b 7
 
 PAN INT d 50
 POCHIPUJ d 4
+{
   VYMOTAJ d  
+}
+VYMOTAJ d
 
+POCHIPUJ i 3
+{
+  PAN INT declareinloop i
+  VYMOTAJ declareinloop 
+}

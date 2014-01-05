@@ -13,7 +13,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.stringtemplate.v4.*;
 
 public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
-        private Map<String, String> mem = new HashMap<String, String>();
+        private Map<String, Variable> mem = new HashMap<String, Variable>();
         private int labelIndex = 0;
         private int registerIndex = 0;
         
@@ -24,11 +24,18 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         private final String FUNCTION_MAIN_NAME = "_main"; //so it cannot collide with any function name defined by user 
         
     	//global variables which were shadowed by function variables 
-    	Map<String, String> paramsShadow = new HashMap<String, String>(); 
+    	Map<String, Variable> paramsShadow = new HashMap<String, Variable>(); 
     	List<String> registeredLocalVariables = new ArrayList<String>();
         List<String> globalVariableDeclarations = new ArrayList<String>(); 
 
         List<String> compilerConstants = new ArrayList<String>(); 
+        
+        //generating internal variable names if necessarry 
+        private int nameIndex = 0; 
+
+        private String generateNewName() {
+            return String.format("_name%d", nameIndex++);
+        }
         
         private String generateNewLabel() {
                 return String.format("L%d", this.labelIndex++);
@@ -339,7 +346,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                     //local definition 
                     if(this.inFunctionDefine){
                 		String mem_reg = this.generateNewRegister(); 
-                        mem.put(identifier, mem_reg);
+                        mem.put(identifier, new Variable(mem_reg, type));
                         
 	                    ST template = new ST(
 	                    	"<mem_reg> = alloca <type>\n"
@@ -351,8 +358,9 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                     }
                     //global definition 
                     else{
+                    	//TODO refactor to Variable class (? :) 
                     	String mem_reg = this.generateNewRegister(true, type + " " + ((type.indexOf('*') >= 0) ? "null" : "0"));
-                        mem.put(identifier, mem_reg);
+                        mem.put(identifier, new Variable(mem_reg, type));
                         
                         //declaration is done at the beginning of the resulting code 
                     	memCode = new CodeFragment("", mem_reg); 
@@ -374,12 +382,9 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                 		System.err.println("Warning: Variable '"+identifier+"' has same name as some function (generateDefineAssign)");
                 	}
             } else {
-                    memCode = new CodeFragment("", mem.get(identifier));
+                    memCode = new CodeFragment("", mem.get(identifier).register);
                     
                     System.err.println(String.format(exists_error, identifier));
-                    if (this.inFunctionDefine){
-                    	registerLocalVariable(identifier, "Warning: Global variable '" + identifier + "' was shadowed by parameter/variable of function '" + inFunctionName + "' (generateDefineAssign)");
-                    }
             }
             
             if(valueCode != null){
@@ -415,15 +420,26 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         	return this.generateGetVariableAddress(ctx.NAME().getText()); 
         }
         
+        //returns pointer to zero if not found or bad type 
         private CodeFragment generateGetVariableAddress(String var_name){
         	if(this.mem.containsKey(var_name)){
-        		return new CodeFragment("", this.mem.get(var_name)); 
+        		Variable var = this.mem.get(var_name); 
+        		
+        		if(var.type == Variable.TYPE_ARRAY_INT){
+        			System.err.println("Warning: Didn't expected array name '"+var_name+"' (generateGetVariableAddress).\n  You probably wanted use ROLKA rvalue ARRAY_NAME.\n  Address to new variable i32(0) returned.");
+        			return new CodeFragment(
+            				generateDefine(this.generateNewName(), "i32", generateConstant("0"), null, null).toString(), 
+            				this.mem.get(var_name).register
+            		); 
+        		}
+        		
+        		return new CodeFragment("", var.register); 
 	        }
 	        else{
-	        	System.err.println("Warning: Non-existing variable '"+var_name + "' - address to new variable i32(0) returned (visitVariableAddress)");
+	        	System.err.println("Warning: Non-existing variable '"+var_name + "' (visitVariableAddress)\n  Address to new variable i32(0) returned.");
         		return new CodeFragment(
         				generateDefine(var_name, "i32", generateConstant("0"), null, null).toString(), 
-        				this.mem.get(var_name)
+        				this.mem.get(var_name).register
         		); 
 	        }
         }
@@ -475,13 +491,13 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         		System.err.println("Warning: Identifier '"+identifier+"' not know (generateGetIdentifierValue)");
         		return generateConstant("0");
         	}
-        	return generateGetAddressValue(new CodeFragment("", mem.get(identifier))); 
+        	return generateGetAddressValue(new CodeFragment("", mem.get(identifier).register)); 
         }
         
         //====================================== ARRAYS =================================
 
-        //TODO NAME checks => remember type 
-        //TODO free array at the end 
+        //TODO NAME checks => remember type
+        //TODO! reallocating to same name 
         //| WCBOOK rexpression TYPE NAME                   # ArrayDefine
         @Override
         public CodeFragment visitArrayDefine(pankoParser.ArrayDefineContext ctx) {
@@ -515,7 +531,19 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         }
         
         private CodeFragment generateGetIndexAddress(String arr_name, CodeFragment indexEvalCode){
-        	String arr_reg = mem.get(arr_name); 
+        	if(!this.mem.containsKey(arr_name)){
+        		System.err.println("Warning: Identifier '"+arr_name+"' not found (generateGetIndexAddress)");
+        		return generateConstant("0");
+        	}
+        	
+        	Variable var = this.mem.get(arr_name);
+        	
+        	if(var.type != Variable.TYPE_ARRAY_INT){
+        		System.err.println("Warning: Cannot delete '"+arr_name+"' as it is not an array (generateGetIndexAddress)");
+        		return generateConstant("0");
+        	}
+        	
+        	String arr_reg = mem.get(arr_name).register; 
         	
         	String mem_reg = generateNewRegister(); 
         	
@@ -534,6 +562,33 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
 
         	return new CodeFragment(template.render(), index_ptr_reg);
         }
+        
+        //TODO test type checking 
+        public CodeFragment visitArrayDelete(pankoParser.ArrayDeleteContext ctx){
+        	String arr_name = ctx.NAME().getText(); 
+        	
+        	if(!this.mem.containsKey(arr_name)){
+        		System.err.println("Warning: Identifier '"+arr_name+"' not found (generateGetIndexAddress)");
+        		return generateConstant("0");
+        	}
+        	
+        	Variable var = this.mem.get(arr_name);
+        	
+        	if(var.type != Variable.TYPE_ARRAY_INT){
+        		System.err.println("Warning: Cannot delete '"+arr_name+"' as it is not an array (generateGetIndexAddress)");
+        		return generateConstant("0");
+        	}
+        	
+        	String load_mem_reg = this.generateNewRegister(); 
+        	
+        	ST template = new ST(
+        			"<load_mem_reg> = load i32** <arr_reg>\n" + 
+        			"call i32 @FREE(i32* <load_mem_reg>)\n"
+        	); 
+        	template.add("arr_reg", var.register);
+        	template.add("load_mem_reg", load_mem_reg); 
+        	return new CodeFragment(template.render(), null);
+        }
         //======================================= FUNCTIONS =========================================
         
         /** 
@@ -549,16 +604,21 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
     			paramsShadow.put(var_name, mem.get(var_name)); 
     		} 
     		registeredLocalVariables.add(var_name); 
+    		mem.remove(var_name);
         }
         
         private void unregisterLocalVariables(){
             for(String var_name : this.registeredLocalVariables){
-            	mem.remove(var_name);
-            	if(paramsShadow.containsKey(var_name)){
-            		mem.put(var_name, paramsShadow.get(var_name)); 
-            	}
+            	unregisterLocalVariable(var_name);
             }
             this.registeredLocalVariables.clear(); 
+        }
+        
+        private void unregisterLocalVariable(String var_name){
+        	mem.remove(var_name);
+        	if(paramsShadow.containsKey(var_name)){
+        		mem.put(var_name, paramsShadow.get(var_name)); 
+        	}
         }
 
         @Override
@@ -610,7 +670,6 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         		paramDefinitionsCode += "i32 " + register;
         		
         		registerLocalVariable(var_name, "Warning: Global variable '" + var_name + "' was shadowed by parameter of function '"+fn_name+"' (FUNCTION_DEFINE)");
-        		mem.remove(var_name);
         		
         		// generateDefineAssign adds it to this.mem
         		CodeFragment defineVariable = generateDefine(var_name, "i32", new CodeFragment("", register), null, "PLACE petrz : exists error '"+var_name+"' (generateFunction)");
@@ -812,6 +871,13 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         public CodeFragment visitFor(pankoParser.ForContext ctx) {
         		String identifier = ctx.NAME().getText();
         		
+        		if(this.mem.containsKey(identifier)){
+        			if(this.paramsShadow.containsKey(identifier)){
+        				System.err.println("Warning: You are a noob who declared same variable '"+identifier+"' in function '"+this.inFunctionName+"', function body and for loop.\n  Or in two nested POCHIPUJ loops\n  The outmost variable reference lost.");
+        			}
+        			this.registerLocalVariable(identifier, "Warning: Identifier '"+identifier+"' shadowed (visitFor).");
+        		}
+        		
                 CodeFragment statement_najprv = generateDefine(identifier, "i32", generateConstant("0"), null, "Warning: (POCHIPUJ-najprv) identifier '%s' already exists");
                 CodeFragment statement_motaj = visit(ctx.statement());
                 //identifier = identifier + 1
@@ -859,10 +925,9 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                 String end_register = generateNewRegister();
                 template.add("ret", end_register);
                 
-                CodeFragment ret = new CodeFragment();
-                ret.addCode(template.render());
-                ret.setRegister(end_register);
-                return ret;
+                this.unregisterLocalVariable(identifier);
+                
+                return new CodeFragment(template.render(), end_register);
         }
         
         //TODO type 
