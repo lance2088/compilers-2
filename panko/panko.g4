@@ -26,7 +26,7 @@ statement:
      | WHILE rexpression NEWLINE statement            # While
      | FOR NAME rexpression NEWLINE statement         # For
      | VMOTAJ TYPE address                            # Vmotaj
-     | VYMOTAJ rexpression                            # Vymotaj  
+     | VYMOTAJ (STRING|rexpression)                   # Vymotaj  
      | rexpression                                    # Evaluate
      |                                                # Emp 
      ;
@@ -66,6 +66,8 @@ rexpression:
     rvalue                                             # RValue
     | ZMOTAJ NAME (rvalue*) (rexpression)?             # FunctionValue
     ;
+    
+STRING: '"' ~["]* '"'; 
      
 SUCHY: 'SUCHY'; 
 

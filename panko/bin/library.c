@@ -17,6 +17,10 @@ int printChar(char c) {
   return 0; 
 }
 
+int printString(char* s) {
+  printf("%s\n", s); 
+}
+
 int iexp(int a, int b) {
         int ret = 1;
         for (int i = 0; i < b; i++) {

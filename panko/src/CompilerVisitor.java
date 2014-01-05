@@ -28,6 +28,8 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
     	List<String> registeredLocalVariables = new ArrayList<String>();
         List<String> globalVariableDeclarations = new ArrayList<String>(); 
 
+        List<String> compilerConstants = new ArrayList<String>(); 
+        
         private String generateNewLabel() {
                 return String.format("L%d", this.labelIndex++);
         }
@@ -45,6 +47,15 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         	else{
         		return String.format("%%R%d", this.registerIndex++);
         	}
+        }
+        
+        //TODO StringBuilder
+        private String getCompilerConstants() {
+        	String result = "";
+        	for(String line : this.compilerConstants){
+        		result += line + "\n"; 
+        	}
+        	return result; 
         }
 
         //TODO StringBuilder
@@ -79,6 +90,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                         "declare i32 @printInt(i32)\n" + 
                         "declare i32 @printChar(i8)\n" + 
                         "declare i32 @printFloat(float)\n" +
+                        "declare i32 @printString(i8*)\n" +
                         "declare i32 @scanInt()\n" + 
                         "declare i8 @scanChar()\n" + 
                         "declare float @scanFloat()\n" + 
@@ -87,6 +99,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                         "declare i32 @FREE(i32*)\n" + 
                         "declare i32 @SET_RANDOM()\n" +  
                         "declare i32 @RANDOM(i32)\n" +   
+                        "\n\n;compiler_constants\n<compiler_constants>\n" + 
                         "\n\n;global_definitions\n<global_definitions>\n" + 
                         "\n\n;function_definitions\n<function_definitions>\n" + 
                         "define i32 @main() {\n" + 
@@ -96,6 +109,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                         "\n\n;main_code\n<main_code>" +
                         "}\n"
                 );
+                template.add("compiler_constants", this.getCompilerConstants());
                 template.add("global_definitions", this.getGlobalDefinitions());
                 template.add("function_definitions", this.getFunctionDefinitions());
                 
@@ -280,17 +294,41 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
     	
     	@Override
         public CodeFragment visitVymotaj(pankoParser.VymotajContext ctx) {
-                CodeFragment code = visit(ctx.rexpression());
-                ST template = new ST(
-                        "<value_code>" + 
-                        "call i32 @printInt (i32 <value>)\n"
-                );
-                template.add("value_code", code);
-                template.add("value", code.getRegister());
-                
-                CodeFragment ret = new CodeFragment();
-                ret.addCode(template.render());
-                return ret;
+    			if(ctx.rexpression() != null){
+	                CodeFragment code = visit(ctx.rexpression());
+	                ST template = new ST(
+	                        "<value_code>" + 
+	                        "call i32 @printInt (i32 <value>)\n"
+	                );
+	                template.add("value_code", code);
+	                template.add("value", code.getRegister());
+	                
+	                return new CodeFragment(template.render(), code.getRegister());
+    			}
+    			else{
+    				String string_to_print = ctx.STRING().getText(); 
+    				string_to_print = string_to_print.substring(1, string_to_print.length() - 1); 
+    				
+	                String constant_id = String.format("@.%d", this.compilerConstants.size()); 
+	                int length = string_to_print.length() + 1; // \00 
+	                
+	                ST template_definition = new ST(
+	                		"<constant_id> = private unnamed_addr constant [<length> x i8] c\"<string>\00\", align 1" 
+	                );
+	                template_definition.add("constant_id", constant_id);
+	                template_definition.add("string", string_to_print);
+	                template_definition.add("length", length);
+	                
+	                this.compilerConstants.add(template_definition.render());
+	                
+	                ST template_print = new ST(
+	                        "call i32 @printString (i8* getelementptr inbounds ([<length> x i8]* <constant_id>, i32 0, i32 0))"
+	                );
+	                template_print.add("constant_id", constant_id);
+	                template_print.add("length", length);
+	                
+	                return new CodeFragment(template_print.render(), null);
+    			}
         }
     	
     	//if(afterDeclareTemplate != null) //assumes existence of <mem_reg>  (and nothing else to replace) 
