@@ -61,5 +61,5 @@ int SET_RANDOM(){
 }
 
 int RANDOM(int r){
-  return rand();
+  return rand() % r;
 }

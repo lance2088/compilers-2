@@ -2,6 +2,14 @@
 //Date: 06-01-2014
 
 //TODO: more specific warnings (try to do line numbers with statements counting) 
+//TODO: scope of variables; for example 
+//  POCHIPUJ tojejedno m
+//  {
+//    VMOTAJ INT a
+//    VMOTAJ INT b 
+//  }
+//  if 'a' and 'b' haven't been previously declared then llvm creates a new instance each time 
+//    and that could be quite consuming (it lead to segmentation fault around 255K loops)
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -436,7 +444,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         		return new CodeFragment("", var.register); 
 	        }
 	        else{
-	        	System.err.println("Warning: Non-existing variable '"+var_name + "' (visitVariableAddress)\n  Address to new variable i32(0) returned.");
+	        	System.err.println("Warning: Non-existing variable '"+var_name + "' (visitVariableAddress)\n  Address to new variable i32(0) returned.\n  This could lead to Segmentation fault if occured in a loop of magnitude 100,000.");
         		return new CodeFragment(
         				generateDefine(var_name, "i32", generateConstant("0"), null, null).toString(), 
         				this.mem.get(var_name).register

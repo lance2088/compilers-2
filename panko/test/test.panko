@@ -1,53 +1,12 @@
-VMOTAJ INT n 
-WCBOOK n INT nodes
-POCHIPUJ i n 
-  NAMOTAJ ROLKA i nodes i
+PAN INT n 1000000
+PAN INT m 10000000
+PAN INT b 500000
 
-MOTAC INT find INT a 
-  PAN INT ia a 
-  MACKAJ NOT EQUAL ia ROLKA ia nodes
-    NAMOTAJ ia ROLKA ia nodes 
-    
-  MACKAJ NOT EQUAL a ia 
-  {
-    PAN INT buffer a 
-    NAMOTAJ a ROLKA a nodes
-    NAMOTAJ ROLKA buffer nodes ia
-  }
+VYMOTAJ n
+VYMOTAJ m
 
-  VYPAPAJ ia 
+POCHIPUJ i m
+  VYMOTAJ BAVI b
+POCHIPUJ i m
+  VYMOTAJ + b BAVI b
 
-MOTAC INT union INT a INT b 
-  PAN INT fa ZMOTAJ find a 
-  PAN INT fb ZMOTAJ find b 
-  
-  AGE? NOT EQUAL fa fb
-    NAMOTAJ ROLKA fa nodes fb
-    
-  VYPAPAJ 0
-
-MEGA MOTAC INT connectedgraph
-  VMOTAJ INT m 
-  POCHIPUJ tojejedno m
-  {
-    VMOTAJ INT a
-    VMOTAJ INT b 
-    ZMOTAJ union a b 
-  }
-    
-  PAN INT cluster ROLKA 0 nodes
-  
-  PAN INT result FAJNE
-  
-  POCHIPUJ i n 
-    AGE? NOT EQUAL cluster ROLKA i nodes 
-      NAMOTAJ result PIPKOS
-  
-  AGE? EQUAL result FAJNE 
-    VYMOTAJ "ANO"
-  PIVO
-    VYMOTAJ "NIE"
-    
-  PRE TEPLYCH nodes  
-  
-  VYPAPAJ 0
