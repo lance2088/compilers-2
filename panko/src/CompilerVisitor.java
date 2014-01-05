@@ -1,9 +1,12 @@
+//Author: Peter Csiba 
+//Date: 06-01-2014
+
+//TODO: more specific warnings (try to do line numbers with statements counting) 
+
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -616,6 +619,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         }
         
         //TODO type
+        //TODO check argument count 
         /**
          *  ZMOTAJ NAME (rvalue*) (rexpression)?             # FunctionValue
          */
@@ -625,7 +629,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         	FunctionFragment fn_fragment = this.functions.get(fn_name); 
         	
         	if(fn_fragment == null){
-        		System.err.println("Warning: Not recognized function '"+fn_name+"' (FUNCTION_VALUE).");
+        		System.err.println("Warning: Not recognized function '"+fn_name+"' (FUNCTION_VALUE).\n  Could be order of declaration, mistyping.");
         		return generateConstant("0");
         	}
         	
@@ -644,13 +648,27 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         	String evalCode = ""; 
         	String paramsCode = ""; 
         	
-        	for(CodeFragment cf : paramEvals){
+        	for(int i=0; i<paramEvals.size() ; i++){
+        		CodeFragment cf = paramEvals.get(i);
+        		
         		if(paramsCode.length() > 0){
         			paramsCode += ",";
         		}
-        		paramsCode += "i32 " + cf.getRegister();
         		
+        		paramsCode += "i32 " + cf.getRegister();
         		evalCode += cf.toString(); 
+        		
+        		if(i >= fn_fragment.params.size()){
+        			System.err.println("Warning: Too many ('"+paramEvals.size()+"') parameters for function '"+fn_name+"' (visitFunctionValue).\n  Excess arguments are ignored in the function call but are evaluated.\n");
+        			break;
+        		}
+        	}
+        	
+        	if(paramEvals.size() < fn_fragment.params.size()){
+        		System.err.println("Warning: Too little ('"+paramEvals.size()+"') parameters for function '"+fn_name+"' (visitFunctionValue).\n  Missing arguments were set to '0' (or null for pointers).");
+        		for(int i = paramEvals.size() ; i < fn_fragment.params.size() ; i++){
+        			paramsCode += "i32 0"; //TODO test 
+        		}
         	}
 
         	String fn_register = generateNewRegister();
