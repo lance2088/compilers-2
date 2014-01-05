@@ -6,4 +6,4 @@ sh make_panko.sh test/calc
 sh make_panko.sh test/loop
 sh make_panko.sh test/function
 sh make_panko.sh test/array
-sh make_panko.sh test/vmotaj
+sh make_panko.sh test/global

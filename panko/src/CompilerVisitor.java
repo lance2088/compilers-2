@@ -70,7 +70,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         
         @Override
         public CodeFragment visitInit(pankoParser.InitContext ctx) {
-                CodeFragment body = visit(ctx.statements());
+                CodeFragment statements = visit(ctx.statements());
 
                 ST template = new ST(
                         "declare i32 @printInt(i32)\n" + 
@@ -84,13 +84,13 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                         "declare i32 @FREE(i32*)\n" + 
                         "declare i32 @SET_RANDOM()\n" +  
                         "declare i32 @RANDOM(i32)\n" +   
-                        "<global_definitions>\n" + 
-                        "<function_definitions>\n" + 
+                        "\n\n;global_definitions\n<global_definitions>\n" + 
+                        "\n\n;function_definitions\n<function_definitions>\n" + 
                         "define i32 @main() {\n" + 
                         "start:\n" + 
                         "call i32 @SET_RANDOM()\n" + 
-                        "<global_code>\n" + 
-                        "<main_code>" +
+                        "\n\n;global_code\n<global_code>\n" + 
+                        "\n\n;main_code\n<main_code>" +
                         "}\n"
                 );
                 template.add("global_definitions", this.getGlobalDefinitions());
@@ -98,18 +98,15 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                 
                 //TODO is there global context in LLVM? 
                 if(this.functions.containsKey(FUNCTION_MAIN_NAME)){
-                	template.add("global_code", body); 
+                	template.add("global_code", statements); 
                 	template.add("main_code", this.functions.get(FUNCTION_MAIN_NAME).body_code.toString());
                 }
                 else{
-                	template.add("global_code", body); 
+                	template.add("global_code", statements); 
                 	template.add("main_code", "ret i32 0\n");
                 }
 
-                CodeFragment code = new CodeFragment();
-                code.addCode(template.render());
-                code.setRegister(body.getRegister());
-                return code;
+                return new CodeFragment(template.render(), statements.getRegister());
         }
         
         @Override
@@ -292,14 +289,44 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                 ret.addCode(template.render());
                 return ret;
         }
-
-    	public CodeFragment generateVariableDefine(String identifier, CodeFragment valueCode, String exists_error){
+    	
+    	//if(afterDeclareTemplate != null) //assumes existence of <mem_reg>  (and nothing else to replace) 
+    	private CodeFragment generateDefine(String identifier, String type, CodeFragment valueCode, String afterDeclareTemplateString, String exists_error){
             CodeFragment memCode = null; 
             
             if (!mem.containsKey(identifier)) {
-            		String mem_register = this.generateNewRegister(); 
-                    mem.put(identifier, mem_register);
-                    memCode = new CodeFragment(mem_register + " = alloca i32\n", mem_register);
+                    //local definition 
+                    if(this.inFunctionDefine){
+                		String mem_reg = this.generateNewRegister(); 
+                        mem.put(identifier, mem_reg);
+                        
+	                    ST template = new ST(
+	                    	"<mem_reg> = alloca <type>\n"
+	                    );
+	                    template.add("mem_reg", mem_reg);
+	                    template.add("type", type);
+	                    
+	                    memCode = new CodeFragment(template.render(), mem_reg);
+                    }
+                    //global definition 
+                    else{
+                    	String mem_reg = this.generateNewRegister(true, type + " " + ((type.indexOf('*') >= 0) ? "null" : "0"));
+                        mem.put(identifier, mem_reg);
+                        
+                        //declaration is done at the beginning of the resulting code 
+                    	memCode = new CodeFragment("", mem_reg); 
+                    }
+                    
+                    if(afterDeclareTemplateString != null){
+                    	ST template = new ST(
+                    		"<mem_code>" + 
+                    		afterDeclareTemplateString  
+                    	);
+                    	template.add("mem_code", memCode.toString()); 
+                    	template.add("mem_reg", memCode.getRegister()); 
+                    	
+                    	memCode = new CodeFragment(template.render(), memCode.getRegister()); 
+                    }
                     
                     //this should be no problem: 
                 	if(this.functions.containsKey(identifier)){
@@ -314,11 +341,22 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                     }
             }
             
-            return generateAssign(memCode, valueCode);
+            if(valueCode != null){
+            	return generateAssign(memCode, valueCode);
+            }
+            else{
+            	return memCode; 
+            }
     	}
     	
         //TODO type 
     	//TODO block 
+    	/*
+    	 * TODO how could this be not an error:
+			POCHIPUJ j 21
+			{
+			  PAN INT buf ROLKA - 41 j arr
+    	 */
         @Override
         public CodeFragment visitVariableDefine(pankoParser.VariableDefineContext ctx) {
         	String identifier = ctx.NAME().getText();
@@ -327,7 +365,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         		registerLocalVariable(identifier, "Warning: Global variable '" + identifier + "' was shadowed by parameter of function '" + inFunctionName + "' (generateDefineAssign)");
             }
             
-        	return generateVariableDefine(identifier, visit(ctx.rexpression()), "Warning: identifier '%s' already exists (PAN)");
+        	return generateDefine(identifier, "i32", visit(ctx.rexpression()), null, "Warning: identifier '%s' already exists (PAN)");
         }
 
         //TODO check type 
@@ -341,9 +379,9 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         		return new CodeFragment("", this.mem.get(var_name)); 
 	        }
 	        else{
-	        	System.err.println("Warning: Non-existing variable '"+var_name + "' - address to new i32(0) returned (visitVariableAddress)");
+	        	System.err.println("Warning: Non-existing variable '"+var_name + "' - address to new variable i32(0) returned (visitVariableAddress)");
         		return new CodeFragment(
-        				generateVariableDefine(var_name, generateConstant("0"), null).toString(), 
+        				generateDefine(var_name, "i32", generateConstant("0"), null, null).toString(), 
         				this.mem.get(var_name)
         		); 
 	        }
@@ -408,29 +446,26 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         public CodeFragment visitArrayDefine(pankoParser.ArrayDefineContext ctx) {
         	String arr_name = ctx.NAME().getText(); 
         	String arr_type = ctx.TYPE().getText(); 
-        	String arr_reg = generateNewRegister();
-        	this.mem.put(arr_name, arr_reg); 
         	
-        	String mem_reg = generateNewRegister();
         	String size_reg = generateNewRegister(); 
+        	String alloc_reg = generateNewRegister();
         	
         	CodeFragment evalCountCode = visit(ctx.rexpression()); 
         	
-        	ST template = new ST(
-        			"<eval>" + 
-        		    "<arr_reg> = alloca i32*\n" +  
+        	ST template = new ST( 
+                	"<eval>" + 
         			"<size_reg> = mul i32 <variable_size>, <count_reg>\n" +
-        		    "<mem_reg> = call noalias i32* @MALLOC(i32 <size_reg>) nounwind\n" +  
-        		    "store i32* <mem_reg>, i32** <arr_reg>\n" 
+        		    "<alloc_reg> = call noalias i32* @MALLOC(i32 <size_reg>) nounwind\n" +  
+        		    "store i32* <alloc_reg>, i32** " //<mem_reg>\n" 
         	);
         	template.add("variable_size", "4"); 
         	template.add("eval", evalCountCode.toString());
-        	template.add("arr_reg", arr_reg);
-        	template.add("mem_reg", mem_reg);
+        	template.add("alloc_reg", alloc_reg);
         	template.add("count_reg", evalCountCode.getRegister());
         	template.add("size_reg", size_reg);
+        	//template.add("mem_reg", "<mem_reg>"); 
         	
-        	return new CodeFragment(template.render(), null);
+        	return generateDefine(arr_name, "i32*", null, template.render() + "<mem_reg>\n", "Warning: Declaring array '"+arr_name+"' identifier already exists.");
         }
 
         @Override 
@@ -438,7 +473,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         	return generateGetIndexAddress(ctx.NAME().getText(), visit(ctx.rvalue())); 
         }
         
-        public CodeFragment generateGetIndexAddress(String arr_name, CodeFragment indexEvalCode){
+        private CodeFragment generateGetIndexAddress(String arr_name, CodeFragment indexEvalCode){
         	String arr_reg = mem.get(arr_name); 
         	
         	String mem_reg = generateNewRegister(); 
@@ -537,7 +572,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         		mem.remove(var_name);
         		
         		// generateDefineAssign adds it to this.mem
-        		CodeFragment defineVariable = generateVariableDefine(var_name, new CodeFragment("", register), "PLACE petrz : exists error '"+var_name+"' (generateFunction)");
+        		CodeFragment defineVariable = generateDefine(var_name, "i32", new CodeFragment("", register), null, "PLACE petrz : exists error '"+var_name+"' (generateFunction)");
         		paramVariablesCode += defineVariable.toString(); 
         	}
         	
@@ -721,7 +756,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         public CodeFragment visitFor(pankoParser.ForContext ctx) {
         		String identifier = ctx.NAME().getText();
         		
-                CodeFragment statement_najprv = generateVariableDefine(identifier, generateConstant("0"), "Warning: (POCHIPUJ-najprv) identifier '%s' already exists");
+                CodeFragment statement_najprv = generateDefine(identifier, "i32", generateConstant("0"), null, "Warning: (POCHIPUJ-najprv) identifier '%s' already exists");
                 CodeFragment statement_motaj = visit(ctx.statement());
                 //identifier = identifier + 1
                 CodeFragment statement_potom = generateAssign(
@@ -775,7 +810,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         }
         
         //TODO type 
-    	public CodeFragment generateConstant(String value){
+    	private CodeFragment generateConstant(String value){
             CodeFragment code = new CodeFragment();
             String register = generateNewRegister();
             code.setRegister(register);
@@ -784,7 +819,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
     	}
     	
     	//TODO type 
-        public CodeFragment generateBinaryOperator(CodeFragment left, CodeFragment right, Integer operator) {
+        private CodeFragment generateBinaryOperator(CodeFragment left, CodeFragment right, Integer operator) {
                 String code_stub = "<ret> = <instruction> i32 <left_val>, <right_val>\n";
                 String instruction = "or";
                 switch (operator) {
@@ -859,7 +894,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         }
         
         //TODO type 
-        public CodeFragment generateUnaryOperator(CodeFragment code, Integer operator) {
+        private CodeFragment generateUnaryOperator(CodeFragment code, Integer operator) {
                 if (operator == pankoParser.ADD) {
                         return code;
                 }
