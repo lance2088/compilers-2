@@ -23,16 +23,37 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
     	//global variables which were shadowed by function variables 
     	Map<String, String> paramsShadow = new HashMap<String, String>(); 
     	List<String> registeredLocalVariables = new ArrayList<String>();
-        
+        List<String> globalVariableDeclarations = new ArrayList<String>(); 
 
         private String generateNewLabel() {
                 return String.format("L%d", this.labelIndex++);
         }
-
-        private String generateNewRegister() {
-                return String.format("%%R%d", this.registerIndex++);
-        }
         
+        private String generateNewRegister() {
+        	return this.generateNewRegister(false, null); 
+        }
+
+        private String generateNewRegister(boolean global, String definition) {
+        	if(global){
+        		String result = String.format("@R%d", this.registerIndex++);
+        		this.globalVariableDeclarations.add(result + " = common global " + definition); 
+        		return result;
+        	}
+        	else{
+        		return String.format("%%R%d", this.registerIndex++);
+        	}
+        }
+
+        //TODO StringBuilder
+        private String getGlobalDefinitions() {
+        	String result = "";
+        	for(String line : this.globalVariableDeclarations){
+        		result += line + "\n"; 
+        	}
+        	return result; 
+        }
+
+        //TODO StringBuilder
         private String generateNewFunction() {
             return String.format("@f%d", this.functionIndex++);
         }
@@ -63,6 +84,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                         "declare i32 @FREE(i32*)\n" + 
                         "declare i32 @SET_RANDOM()\n" +  
                         "declare i32 @RANDOM(i32)\n" +   
+                        "<global_definitions>\n" + 
                         "<function_definitions>\n" + 
                         "define i32 @main() {\n" + 
                         "start:\n" + 
@@ -71,7 +93,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                         "<main_code>" +
                         "}\n"
                 );
-                
+                template.add("global_definitions", this.getGlobalDefinitions());
                 template.add("function_definitions", this.getFunctionDefinitions());
                 
                 //TODO is there global context in LLVM? 
@@ -271,43 +293,28 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                 return ret;
         }
 
-    	//TODO refactor this ugly code :P (visitAssign, generate*Address*
-    	public CodeFragment generateDefineAssign(String identifier, CodeFragment value, String identifier_error, String exists_error){
-            String mem_register;
-            String code_stub = "";
+    	public CodeFragment generateVariableDefine(String identifier, CodeFragment valueCode, String exists_error){
+            CodeFragment memCode = null; 
             
             if (!mem.containsKey(identifier)) {
-                    mem_register = this.generateNewRegister();
-                    code_stub = "<mem_register> = alloca i32\n";
+            		String mem_register = this.generateNewRegister(); 
                     mem.put(identifier, mem_register);
-                    if(identifier_error != null){
-                    	System.err.println(String.format(identifier_error, identifier));
-                    }
+                    memCode = new CodeFragment(mem_register + " = alloca i32\n", mem_register);
+                    
+                    //this should be no problem: 
                 	if(this.functions.containsKey(identifier)){
                 		System.err.println("Warning: Variable '"+identifier+"' has same name as some function (generateDefineAssign)");
                 	}
             } else {
-                    mem_register = mem.get(identifier);
-                    if(exists_error != null){
-                    	System.err.println(String.format(exists_error, identifier));
-                        if (this.inFunctionDefine){
-                    		registerLocalVariable(identifier, "Warning: Global variable '" + identifier + "' was shadowed by parameter/variable of function '" + inFunctionName + "' (generateDefineAssign)");
-                        }
+                    memCode = new CodeFragment("", mem.get(identifier));
+                    
+                    System.err.println(String.format(exists_error, identifier));
+                    if (this.inFunctionDefine){
+                    	registerLocalVariable(identifier, "Warning: Global variable '" + identifier + "' was shadowed by parameter/variable of function '" + inFunctionName + "' (generateDefineAssign)");
                     }
             }
-            ST template = new ST(
-                    "<value_code>" + 
-                    code_stub + 
-                    "store i32 <value_register>, i32* <mem_register>\n"
-            );
-            template.add("value_code", value.toString());
-            template.add("value_register", value.getRegister());
-            template.add("mem_register", mem_register);
-            CodeFragment ret = new CodeFragment();
-            ret.addCode(template.render());
-            ret.setRegister(value.getRegister());
-            return ret;
-    		
+            
+            return generateAssign(memCode, valueCode);
     	}
     	
         //TODO type 
@@ -320,25 +327,26 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         		registerLocalVariable(identifier, "Warning: Global variable '" + identifier + "' was shadowed by parameter of function '" + inFunctionName + "' (generateDefineAssign)");
             }
             
-        	return generateDefineAssign(identifier, visit(ctx.rexpression()), null, "Warning: identifier '%s' already exists (PAN)");
+        	return generateVariableDefine(identifier, visit(ctx.rexpression()), "Warning: identifier '%s' already exists (PAN)");
         }
 
         //TODO check type 
         @Override
         public CodeFragment visitVariableAddress(pankoParser.VariableAddressContext ctx) {
-        	String var_name = ctx.NAME().getText(); 
-
+        	return this.generateGetVariableAddress(ctx.NAME().getText()); 
+        }
+        
+        private CodeFragment generateGetVariableAddress(String var_name){
         	if(this.mem.containsKey(var_name)){
         		return new CodeFragment("", this.mem.get(var_name)); 
 	        }
 	        else{
 	        	System.err.println("Warning: Non-existing variable '"+var_name + "' - address to new i32(0) returned (visitVariableAddress)");
         		return new CodeFragment(
-        				generateDefineAssign(var_name, generateConstant("0"), null, null).toString(), 
+        				generateVariableDefine(var_name, generateConstant("0"), null).toString(), 
         				this.mem.get(var_name)
         		); 
 	        }
-        	//return generateDefineAssign(ctx.NAME().getText(), visit(ctx.rexpression()), "Warning: (NAMOTAJ) identifier '%s' doesn't exists", null);
         }
         
         //address: 
@@ -352,9 +360,10 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         //     | NAMOTAJ address rexpression                    # Assign 
         @Override
         public CodeFragment visitAssign(pankoParser.AssignContext ctx) {
-        	CodeFragment addressCode = visit(ctx.address());
-        	CodeFragment valueCode = visit(ctx.rexpression()); 
-        	
+        	return this.generateAssign(visit(ctx.address()), visit(ctx.rexpression())); 
+        }
+        
+        private CodeFragment generateAssign(CodeFragment addressCode, CodeFragment valueCode) {
         	ST template = new ST(
         			"<address_code>" + 
                 	"<value_code>" + 
@@ -410,10 +419,11 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         	ST template = new ST(
         			"<eval>" + 
         		    "<arr_reg> = alloca i32*\n" +  
-        			"<size_reg> = mul i32 4, <count_reg>\n" +
+        			"<size_reg> = mul i32 <variable_size>, <count_reg>\n" +
         		    "<mem_reg> = call noalias i32* @MALLOC(i32 <size_reg>) nounwind\n" +  
         		    "store i32* <mem_reg>, i32** <arr_reg>\n" 
         	);
+        	template.add("variable_size", "4"); 
         	template.add("eval", evalCountCode.toString());
         	template.add("arr_reg", arr_reg);
         	template.add("mem_reg", mem_reg);
@@ -527,7 +537,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         		mem.remove(var_name);
         		
         		// generateDefineAssign adds it to this.mem
-        		CodeFragment defineVariable = generateDefineAssign(var_name, new CodeFragment("", register), null, "PLACE petrz : exists error '"+var_name+"' (generateFunction)");
+        		CodeFragment defineVariable = generateVariableDefine(var_name, new CodeFragment("", register), "PLACE petrz : exists error '"+var_name+"' (generateFunction)");
         		paramVariablesCode += defineVariable.toString(); 
         	}
         	
@@ -711,16 +721,16 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         public CodeFragment visitFor(pankoParser.ForContext ctx) {
         		String identifier = ctx.NAME().getText();
         		
-                CodeFragment statement_najprv = generateDefineAssign(identifier, generateConstant("0"), null, "Warning: (POCHIPUJ-najprv) identifier '%s' already exists");
+                CodeFragment statement_najprv = generateVariableDefine(identifier, generateConstant("0"), "Warning: (POCHIPUJ-najprv) identifier '%s' already exists");
                 CodeFragment statement_motaj = visit(ctx.statement());
                 //identifier = identifier + 1
-                CodeFragment statement_potom = generateDefineAssign(identifier, generateBinaryOperator(
-                                generateGetIdentifierValue(identifier),
-                                generateConstant("1"),
-                                pankoParser.ADD
-                   ),
-                   "Warning: (POCHIPUJ-potom) identifier '%s' doesn't exists - PLACES petrz",
-                   null// "Warning: (POCHIPUJ-potom) identifier '%s' already exists" //ofc it exists as I defined it in statement_najprv :P 
+                CodeFragment statement_potom = generateAssign(
+                	this.generateGetVariableAddress(identifier), 
+                	generateBinaryOperator(
+                        generateGetIdentifierValue(identifier),
+                        generateConstant("1"),
+                        pankoParser.ADD
+                    )
                 );
                 
                 CodeFragment condition_value = generateBinaryOperator(

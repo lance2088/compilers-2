@@ -1,1 +1,11 @@
-VYMOTAJ 42
+WCBOOK 42 INT global 
+
+MOTAC INT sucet 
+  VYMOTAJ + ROLKA 0 global ROLKA 1 global 
+  VYPAPAJ 0
+  
+MEGA MOTAC INT whatever
+  NAMOTAJ ROLKA 0 global 42
+  NAMOTAJ ROLKA 1 global 47
+  VYMOTAJ ZMOTAJ sucet
+  VYPAPAJ 0
