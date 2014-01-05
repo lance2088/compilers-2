@@ -304,6 +304,7 @@ DIRECT - goto
 PURE - null pointer 
 VYFAJCENY KAPOR -  
 DOGE BLOCK: MANY, MUCH, VERY, SO, SUCH 
+SURE
 
 variable reference 
 

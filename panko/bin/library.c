@@ -2,26 +2,26 @@
 #include <stdio.h>
 #include <time.h> 
 
-int printInt(int a) {
+int _printInt(int a) {
         printf("%d\n", a);
         return 0;
 }
 
-int printFloat(float a) {
+int _printFloat(float a) {
         printf("%f\n", a);
         return 0;
 }
 
-int printChar(char c) {
+int _printChar(char c) {
   putc(c, stdout); 
   return 0; 
 }
 
-int printString(char* s) {
+int _printString(char* s) {
   printf("%s\n", s); 
 }
 
-int iexp(int a, int b) {
+int _iexp(int a, int b) {
         int ret = 1;
         for (int i = 0; i < b; i++) {
                 ret *= a;
@@ -29,37 +29,42 @@ int iexp(int a, int b) {
         return ret;
 }
 
-int scanInt(){
+int _scanInt(){
   int result;
   scanf("%d", &result);
   return result; 
 }
 
-int scanChar(){
+int _scanChar(){
   char result;
   scanf("%c", &result);
   return result; 
 }
 
-float scanFloat(){
+float _scanFloat(){
   float result;
   scanf("%f", &result);
   return result; 
 }
 
 
-int* MALLOC(int a){
+int* _MALLOC(int a){
   return malloc(a); 
 }
 
-int FREE(int* a){
+int _FREE(int* a){
   free(a); 
 }
 
-int SET_RANDOM(){
+int _SET_RANDOM(){
   srand(time(NULL));
 }
 
-int RANDOM(int r){
+int _RANDOM(int r){
   return rand() % r;
+}
+
+int cudzia(int a, int b){
+  //printf("%d+%d\n", a, b); 
+  return a+b; 
 }

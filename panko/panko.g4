@@ -11,11 +11,13 @@ TODO: VYMOTAJ ROLKA i  //is not a parser error
 TODO: Mal by podporovať volanie externych funkcii (napriklad C-ckovych funkcii, staci iba tie, co pouzivaju kompatobilne typy)
 TODO: refactor to common identifiers (function, array, variable) -- do it when types
 TODO: change main to no params / name  
+TODO: refactor EXTERN TYPE NAME (TYPE NAME)*    
 */
 
 statement: 
      SUCHY .*?                                        # Suchy
      | MEGA funkcia                                   # Main
+     | EXTERN MOTAC TYPE NAME (TYPE NAME)*            # FunctionExtern
      | funkcia                                        # FunctionDefine
      | WCBOOK rexpression TYPE NAME                   # ArrayDefine
      | FREE_PRE FREE_TEPLYCH NAME                     # ArrayDelete
@@ -33,11 +35,9 @@ statement:
 
 address: 
      NAME                                             # VariableAddress
-     | ROLKA rvalue NAME                                # ArrayAddress
+     | ROLKA rvalue NAME                              # ArrayAddress
 ;
   
-
-/**TODO: Disallow function definitions inside functions */
 funkcia: 
     MOTAC TYPE NAME (TYPE NAME)* NEWLINE 
     (statements NEWLINE)?
@@ -84,6 +84,7 @@ FREE_TEPLYCH: 'TEPLYCH';
 WHITESPACE: [ \t] -> skip;
 NEWLINE: '\n';
 MEGA: 'MEGA'; 
+EXTERN: 'DZEDZINSKY'; 
 MOTAC: 'MOTAC'; 
 VYPAPAJ: 'VYPAPAJ'; 
 ZMOTAJ: 'ZMOTAJ'; 

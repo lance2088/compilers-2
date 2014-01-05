@@ -1,12 +1,11 @@
-PAN INT n 1000000
-PAN INT m 10000000
-PAN INT b 500000
+MOTAC INT factorial INT n
+  PAN INT result 1
+  AGE? SMALLER 0 n 
+  {
+    PAN INT last ZMOTAJ factorial - n 1
+    NAMOTAJ result * last n 
+  }
+  VYPAPAJ result
 
-VYMOTAJ n
-VYMOTAJ m
 
-POCHIPUJ i m
-  VYMOTAJ BAVI b
-POCHIPUJ i m
-  VYMOTAJ + b BAVI b
-
+VYMOTAJ ZMOTAJ factorial 10

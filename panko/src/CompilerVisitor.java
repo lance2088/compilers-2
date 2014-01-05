@@ -28,7 +28,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         private int functionIndex = 0;
         private Map<String, FunctionFragment> functions = new HashMap<String, FunctionFragment>();
         private boolean inFunctionDefine = false; 
-        private String inFunctionName = ""; 
+        private String inFunctionName = ""; //should not make difference if inFunctionDefine == false
         private final String FUNCTION_MAIN_NAME = "_main"; //so it cannot collide with any function name defined by user 
         
     	//global variables which were shadowed by function variables 
@@ -102,24 +102,24 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                 CodeFragment statements = visit(ctx.statements());
 
                 ST template = new ST(
-                        "declare i32 @printInt(i32)\n" + 
-                        "declare i32 @printChar(i8)\n" + 
-                        "declare i32 @printFloat(float)\n" +
-                        "declare i32 @printString(i8*)\n" +
-                        "declare i32 @scanInt()\n" + 
-                        "declare i8 @scanChar()\n" + 
-                        "declare float @scanFloat()\n" + 
-                        "declare i32 @iexp(i32, i32)\n" + //TODO should be native 
-                        "declare i32* @MALLOC(i32)\n" +  
-                        "declare i32 @FREE(i32*)\n" + 
-                        "declare i32 @SET_RANDOM()\n" +  
-                        "declare i32 @RANDOM(i32)\n" +   
+                        "declare i32 @_printInt(i32)\n" + 
+                        "declare i32 @_printChar(i8)\n" + 
+                        "declare i32 @_printFloat(float)\n" +
+                        "declare i32 @_printString(i8*)\n" +
+                        "declare i32 @_scanInt()\n" + 
+                        "declare i8 @_scanChar()\n" + 
+                        "declare float @_scanFloat()\n" + 
+                        "declare i32 @_iexp(i32, i32)\n" + //TODO should be native 
+                        "declare i32* @_MALLOC(i32)\n" +  
+                        "declare i32 @_FREE(i32*)\n" + 
+                        "declare i32 @_SET_RANDOM()\n" +  
+                        "declare i32 @_RANDOM(i32)\n" +   
                         "\n\n;compiler_constants\n<compiler_constants>\n" + 
                         "\n\n;global_definitions\n<global_definitions>\n" + 
                         "\n\n;function_definitions\n<function_definitions>\n" + 
                         "define i32 @main() {\n" + 
                         "start:\n" + 
-                        "call i32 @SET_RANDOM()\n" + 
+                        "call i32 @_SET_RANDOM()\n" + 
                         "\n\n;global_code\n<global_code>\n" + 
                         "\n\n;main_code\n<main_code>" +
                         "}\n"
@@ -268,7 +268,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
     		
             ST template = new ST(
             		"<value_code>" + 
-                    "<ret_reg> = call i32 @RANDOM(i32 <value_reg>)\n"
+                    "<ret_reg> = call i32 @_RANDOM(i32 <value_reg>)\n"
             );
             template.add("value_code", valueCode.toString());
             template.add("value_reg", valueCode.getRegister());
@@ -297,7 +297,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
     		
             ST template = new ST(
             		"<address_code>" + 
-                    "<value_register> = call i32 @scanInt()\n" +
+                    "<value_register> = call i32 @_scanInt()\n" +
                     "store i32 <value_register>, i32* <mem_register>\n"
             );
             template.add("address_code", addressCode.toString());
@@ -313,7 +313,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
 	                CodeFragment code = visit(ctx.rexpression());
 	                ST template = new ST(
 	                        "<value_code>" + 
-	                        "call i32 @printInt (i32 <value>)\n"
+	                        "call i32 @_printInt (i32 <value>)\n"
 	                );
 	                template.add("value_code", code);
 	                template.add("value", code.getRegister());
@@ -337,7 +337,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
 	                this.compilerConstants.add(template_definition.render());
 	                
 	                ST template_print = new ST(
-	                        "call i32 @printString (i8* getelementptr inbounds ([<length> x i8]* <constant_id>, i32 0, i32 0))"
+	                        "call i32 @_printString (i8* getelementptr inbounds ([<length> x i8]* <constant_id>, i32 0, i32 0))\n"
 	                );
 	                template_print.add("constant_id", constant_id);
 	                template_print.add("length", length);
@@ -444,7 +444,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         		return new CodeFragment("", var.register); 
 	        }
 	        else{
-	        	System.err.println("Warning: Non-existing variable '"+var_name + "' (visitVariableAddress)\n  Address to new variable i32(0) returned.\n  This could lead to Segmentation fault if occured in a loop of magnitude 100,000.");
+	        	System.err.println("Warning: Non-existing variable '"+var_name + "' (visitVariableAddress)\n  Address to new variable i32(0) returned.\n  This could lead to Segmentation fault if occured in a loop of magnitude 100,000.\n    But no problem with functions as they free their variables.");
         		return new CodeFragment(
         				generateDefine(var_name, "i32", generateConstant("0"), null, null).toString(), 
         				this.mem.get(var_name).register
@@ -520,7 +520,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         	ST template = new ST( 
                 	"<eval>" + 
         			"<size_reg> = mul i32 <variable_size>, <count_reg>\n" +
-        		    "<alloc_reg> = call noalias i32* @MALLOC(i32 <size_reg>) nounwind\n" +  
+        		    "<alloc_reg> = call noalias i32* @_MALLOC(i32 <size_reg>) nounwind\n" +  
         		    "store i32* <alloc_reg>, i32** " //<mem_reg>\n" 
         	);
         	template.add("variable_size", "4"); 
@@ -591,7 +591,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         	
         	ST template = new ST(
         			"<load_mem_reg> = load i32** <arr_reg>\n" + 
-        			"call i32 @FREE(i32* <load_mem_reg>)\n"
+        			"call i32 @_FREE(i32* <load_mem_reg>)\n"
         	); 
         	template.add("arr_reg", var.register);
         	template.add("load_mem_reg", load_mem_reg); 
@@ -642,46 +642,100 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         	return generateFunction(ctx.funkcia(), null); 
         }
         
-        private CodeFragment generateFunction(pankoParser.FunkciaContext ctx, String override_name){
-        	List<TerminalNode> tokens = ctx.NAME();
-        	String fn_name = (override_name == null) ? tokens.get(0).getText() : override_name;
+        @Override
+        public CodeFragment visitFunctionExtern(pankoParser.FunctionExternContext ctx) {
+        	String fn_name = ctx.NAME().get(0).getText();
+        	String llvm_function_name = "@" + fn_name; 
         	
-        	if(this.inFunctionDefine){
-    			System.err.println("Warning: Defining function '" + fn_name + "' in function. It will be ignored. (FUNCTION_DEFINE)");
-    			return new CodeFragment(); 
-        	}
-        	if(this.mem.containsKey(fn_name)){
-        		System.err.println("Warning: Function '"+fn_name+"' has same name as some variable (FUNCTION_DEFINE)");
-        	}
-        	if(override_name != null && "_main".equals(override_name) && tokens.size() > 1){
-        		System.err.println("Warning: Main '"+ fn_name + "'cannot have parameters.");
+        	FunctionFragment functionFragment = parseFunctionHeader(fn_name, llvm_function_name, ctx.TYPE(), ctx.NAME());
+        	if(functionFragment == null){
+        		this.inFunctionDefine = false; 
+        		return new CodeFragment(); 
         	}
         	
-        	this.inFunctionDefine = true; 
-        	this.inFunctionName = fn_name;
+        	ParamsFragment paramsFragment = functionFragment.paramsFragment; 
         	
-        	FunctionFragment functionFragment = new FunctionFragment();
+            ST template_body = new ST(
+            		"declare i32 <llvm_function_name>(<params_definition_code>)\n"
+            );
+            template_body.add("params_definition_code", paramsFragment.definitionsCode.toString());
+            template_body.add("llvm_function_name", llvm_function_name);
+            
+            //TODO refactor, CodeFragment.copy()
+            functionFragment.body_code = new CodeFragment(template_body.render(), null);
+            functionFragment.all_code = new CodeFragment(template_body.render(), null);
 
-    		functionFragment.llvm_name = generateNewFunction();
-    		this.functions.put(fn_name, functionFragment); 
+    		this.inFunctionDefine = false; 
     		
-        	String paramDefinitionsCode = ""; 
-        	String paramVariablesCode = ""; 
+            //function code must be at the beginning 
+            return new CodeFragment(); 
+        }
+        
+        // Note that first of both types and names is the type and name of the function 
+        private ParamsFragment parseFunctionArgs(String fn_name, List<TerminalNode> types, List<TerminalNode> names){
+        	ParamsFragment result = new ParamsFragment(); 
         	
         	//TODO types 
-        	for(int i=1; i<tokens.size() ; i++){
-        		String var_name = tokens.get(i).getText(); 
-        		functionFragment.params.add(var_name);
+        	for(int i=1; i< names.size() ; i++){
+        		String var_name = names.get(i).getText(); 
+        		result.params.add(var_name);
         		
         		String register = generateNewRegister();
-        		if(i != 1) paramDefinitionsCode += ","; 
-        		paramDefinitionsCode += "i32 " + register;
+        		if(i != 1) result.definitionsCode.addCode(","); 
+        		result.definitionsCode.addCode("i32 " + register);
         		
         		registerLocalVariable(var_name, "Warning: Global variable '" + var_name + "' was shadowed by parameter of function '"+fn_name+"' (FUNCTION_DEFINE)");
         		
         		// generateDefineAssign adds it to this.mem
         		CodeFragment defineVariable = generateDefine(var_name, "i32", new CodeFragment("", register), null, "PLACE petrz : exists error '"+var_name+"' (generateFunction)");
-        		paramVariablesCode += defineVariable.toString(); 
+        		result.toVariablesCode.addCode(defineVariable.toString()); 
+        	}
+        	
+        	return result; 
+        }
+        
+        private FunctionFragment parseFunctionHeader(String fn_name, String llvm_name, List<TerminalNode> types, List<TerminalNode> names){
+        	//String fn_return_type = ctx.TYPE(0).getText(); //TODO 
+        	
+        	if(this.inFunctionDefine){
+    			System.err.println("Warning: Defining function '" + fn_name + "' in function. It will be ignored. (parseFunctionHeader)");
+    			return null; 
+        	}
+        	if(this.mem.containsKey(fn_name)){
+        		System.err.println("Warning: Function '"+fn_name+"' has same name as some variable (parseFunctionHeader)");
+        	}
+
+        	this.inFunctionDefine = true; 
+        	this.inFunctionName = fn_name;
+        	
+        	FunctionFragment functionFragment = new FunctionFragment();
+    		functionFragment.llvm_name = llvm_name; 
+    		this.functions.put(fn_name, functionFragment);
+        	
+    		//Generate parameters 
+    		ParamsFragment paramsFragment = parseFunctionArgs(fn_name, types, names); 
+    		functionFragment.paramsFragment = paramsFragment; 
+    	
+    		return functionFragment; 
+        }
+        
+        private CodeFragment generateFunction(pankoParser.FunkciaContext ctx, String override_name){
+        	String fn_name = (override_name == null) ? ctx.NAME().get(0).getText() : override_name;
+        	
+        	FunctionFragment functionFragment = parseFunctionHeader(fn_name, generateNewFunction(), ctx.TYPE(), ctx.NAME());
+        	if(functionFragment == null){
+            	this.inFunctionDefine = false; 
+        		return new CodeFragment(); 
+        	}
+        	
+        	ParamsFragment paramsFragment = functionFragment.paramsFragment; 
+
+        	//TODO test 
+        	if(override_name != null && "_main".equals(override_name) && paramsFragment.params.size() > 0){
+        		System.err.println("Warning: Main '"+ fn_name + "'cannot have parameters.");
+        		paramsFragment.params.clear();
+        		paramsFragment.toVariablesCode = new CodeFragment();
+        		paramsFragment.definitionsCode = new CodeFragment();
         	}
         	
         	CodeFragment statementsCode = (ctx.statements() == null) ? null : visit(ctx.statements());
@@ -693,7 +747,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                     "<return_code>" + 
                     "ret i32 <return_register>\n"
             );
-            template_body.add("param_variables", paramVariablesCode);
+            template_body.add("param_variables", paramsFragment.toVariablesCode.toString());
             template_body.add("statements", statementsCode);
             template_body.add("return_code", returnCode);
             template_body.add("return_register", returnCode.getRegister());
@@ -709,7 +763,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
             );
             template.add("function_name", fn_name);
             template.add("llvm_name", functionFragment.llvm_name);
-            template.add("params_code", paramDefinitionsCode);
+            template.add("params_code", paramsFragment.definitionsCode);
             template.add("body_code", functionFragment.body_code.toString());
             
             functionFragment.all_code = new CodeFragment(template.render(), returnCode.getRegister()); 
@@ -763,15 +817,15 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         		paramsCode += "i32 " + cf.getRegister();
         		evalCode += cf.toString(); 
         		
-        		if(i >= fn_fragment.params.size()){
+        		if(i >= fn_fragment.paramsFragment.params.size()){
         			System.err.println("Warning: Too many ('"+paramEvals.size()+"') parameters for function '"+fn_name+"' (visitFunctionValue).\n  Excess arguments are ignored in the function call but are evaluated.\n");
         			break;
         		}
         	}
         	
-        	if(paramEvals.size() < fn_fragment.params.size()){
+        	if(paramEvals.size() < fn_fragment.paramsFragment.params.size()){
         		System.err.println("Warning: Too little ('"+paramEvals.size()+"') parameters for function '"+fn_name+"' (visitFunctionValue).\n  Missing arguments were set to '0' (or null for pointers).");
-        		for(int i = paramEvals.size() ; i < fn_fragment.params.size() ; i++){
+        		for(int i = paramEvals.size() ; i < fn_fragment.paramsFragment.params.size() ; i++){
         			paramsCode += "i32 0"; //TODO test 
         		}
         	}
@@ -968,7 +1022,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                             instruction = "srem";
                             break;
                         case pankoParser.EXP:
-                                instruction = "@iexp";
+                                instruction = "@_iexp";
                                 code_stub = "<ret> = call i32 <instruction>(i32 <left_val>, i32 <right_val>)\n";
                                 break;
                         case pankoParser.AND:
