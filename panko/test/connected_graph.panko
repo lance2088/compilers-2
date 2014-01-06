@@ -48,9 +48,12 @@ MEGA MOTAC INT connectedgraph
   {
     VMOTAJ INT a
     VMOTAJ INT b 
-    ZMOTAJ union a b
+    ZMOTAJ union a b 
   }
     
+  POCHIPUJ i n 
+    ZMOTAJ find i
+      
   PAN INT cluster ROLKA 0 parent
   PAN INT result FAJNE
   
@@ -59,9 +62,9 @@ MEGA MOTAC INT connectedgraph
       NAMOTAJ result PIPKOS
   
   AGE? EQUAL result FAJNE 
-    VYMOTAJ "ANO"
+    VYMOTAJ "YES"
   PIVO
-    VYMOTAJ "NIE"
+    VYMOTAJ "NO"
     
   PRE TEPLYCH parent  
   PRE TEPLYCH size  
