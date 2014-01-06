@@ -54,7 +54,10 @@ At the end we provide examples of programs in PANKO to solve the following probl
   Sort
   Finding primes
   Check if a graph is connected
-    
+  
+  To check just run:
+  $python judge.py panko     
+   
 Also we provide comprehensive tests for all constructs in PANKO: 
   array
   calc
