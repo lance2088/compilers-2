@@ -12,6 +12,7 @@ TODO: Mal by podporovať volanie externych funkcii (napriklad C-ckovych funkcii,
 TODO: refactor to common identifiers (function, array, variable) -- do it when types
 TODO: change main to no params / name  
 TODO: refactor EXTERN TYPE NAME (TYPE NAME)*    
+TODO: Maybe we should change statement: KEYWORD PARAMS so we could give more specific errors. 
 */
 
 statement: 
@@ -29,7 +30,11 @@ statement:
      | FOR NAME rexpression NEWLINE statement         # For
      | VMOTAJ TYPE address                            # Vmotaj
      | VYMOTAJ (STRING|rexpression)                   # Vymotaj  
-     | rexpression                                    # Evaluate
+     | PRIMOTAJ address                               # Primotaj
+     | ODMOTAJ address                                # Odmotaj 
+     | POCHILL                                        # Pochill 
+     | SLZY                                           # Slzy
+     | rexpression                                    # Evaluate 
      |                                                # Emp 
      ;
 
@@ -106,6 +111,12 @@ SMALLER: 'SMALLER';
 
 VMOTAJ: 'VMOTAJ'; 
 VYMOTAJ: 'VYMOTAJ'; 
+
+PRIMOTAJ: 'PRIMOTAJ'; 
+ODMOTAJ: 'ODMOTAJ'; 
+
+POCHILL: 'POCHILL'; 
+SLZY: 'SLZY'; 
 
 PIPKOS: 'PIPKOS'; 
 FAJNE: 'FAJNE';
