@@ -12,7 +12,7 @@ When we dive into implementation specifics we always use PANKO 0.1beta.
 
 PANKO is a procedural language with variables, functions and arrays. 
 There are no objects, anonymous anythings, function pointers, pointers to pointers and all this fancy stuff. PANKO doesn't need that. 
-PANKO has basic types of variables and provides automatic conversion between them. 
+PANKO has basic types of variables ad provides automatic conversion between them. 
 
 PANKO's syntax is inspired by C, Python, Polish (prefix) notation and most importantly our slang. It's aimed for markets with cheap
 programming force as this language deeply reduces [1] compiling time and therefore saves so precious machine time. As we know there are only few languages of this kind. This and easy to grasp syntax makes PANKO special. 

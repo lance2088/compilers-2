@@ -1,8 +1,8 @@
 #! /bin/bash
-echo "=========== ANTLR4 panko.g4 TODO:specify whereis antlr===========" 
-#java -jar /home/petrzlen/bin/antlr-4.1-complete.jar panko.g4 -visitor
-#mv *java src/
-#mv *tokens llvm/
+echo "=========== ANTLR4 panko.g4 ===========" 
+java -jar panko/bin/antlr-4.1-complete.jar panko/panko.g4 -visitor
+mv panko/*java panko/src/
+mv panko/*tokens panko/llvm/
 echo "=========== LIBRARY library.c=========="
 cd panko/bin
 gcc -shared -fPIC -std=c99 library.c -o library.so
