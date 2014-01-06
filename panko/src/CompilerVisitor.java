@@ -106,6 +106,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                         "declare i32 @_printChar(i8)\n" + 
                         "declare i32 @_printFloat(float)\n" +
                         "declare i32 @_printString(i8*)\n" +
+                        "declare i32 @_printSlzy()\n" +
                         "declare i32 @_scanInt()\n" + 
                         "declare i8 @_scanChar()\n" + 
                         "declare float @_scanFloat()\n" + 
@@ -146,7 +147,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
                 CodeFragment code = new CodeFragment();
                 for(pankoParser.StatementContext s: ctx.statement()) {
                         CodeFragment statement = visit(s);
-                        code.addCode(statement);
+                        code.addCode(statement.toString());
                         code.setRegister(statement.getRegister());
                 }
                 return code;
@@ -280,6 +281,11 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         @Override
     	public CodeFragment visitSuchy(@NotNull pankoParser.SuchyContext ctx){
             return new CodeFragment();
+    	}
+        
+        @Override
+    	public CodeFragment visitEvaluate(@NotNull pankoParser.EvaluateContext ctx){
+            return visit(ctx.rexpression());
     	}
         
         @Override
@@ -419,7 +425,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         		registerLocalVariable(identifier, "Warning: Global variable '" + identifier + "' was shadowed by parameter of function '" + inFunctionName + "' (generateDefineAssign)");
             }
             
-        	return generateDefine(identifier, "i32", visit(ctx.rexpression()), null, "Warning: identifier '%s' already exists (PAN)");
+        	return generateDefine(identifier, "i32", visit(ctx.rexpression()), null, "Warning: identifier '%s' already exists (PAN).\n  RVALUE will be set to the existing variable.");
         }
 
         //TODO check type 
@@ -502,6 +508,31 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         	return generateGetAddressValue(new CodeFragment("", mem.get(identifier).register)); 
         }
         
+        @Override
+        public CodeFragment visitPrimotaj(pankoParser.PrimotajContext ctx) {
+        	CodeFragment addressCode = visit(ctx.address());  
+        	return generateAssign(addressCode, generateBinaryOperator(
+        			generateGetAddressValue(addressCode), 
+        			generateConstant("1"), 
+        			pankoParser.ADD));
+        }
+        @Override
+        public CodeFragment visitOdmotaj(pankoParser.OdmotajContext ctx) {
+        	CodeFragment addressCode = visit(ctx.address());  
+        	return generateAssign(addressCode, generateBinaryOperator(
+        			generateGetAddressValue(addressCode), 
+        			generateConstant("1"), 
+        			pankoParser.SUB));
+        }
+        @Override
+        public CodeFragment visitPochill(pankoParser.PochillContext ctx) {
+        	return new CodeFragment(); 
+        }
+        @Override
+        public CodeFragment visitSlzy(pankoParser.SlzyContext ctx) {
+        	return new CodeFragment("call i32 @_printSlzy()\n", null); 
+        }
+        
         //====================================== ARRAYS =================================
 
         //TODO NAME checks => remember type
@@ -530,7 +561,7 @@ public class CompilerVisitor extends pankoBaseVisitor<CodeFragment> {
         	template.add("size_reg", size_reg);
         	//template.add("mem_reg", "<mem_reg>"); 
         	
-        	return generateDefine(arr_name, "i32*", null, template.render() + "<mem_reg>\n", "Warning: Declaring array '"+arr_name+"' identifier already exists.");
+        	return generateDefine(arr_name, "i32*", null, template.render() + "<mem_reg>\n", "Warning: Declaring array '"+arr_name+"' identifier already exists.\n  This leads to no action.\n  Note that in the future this could lead to reallocating the array (as assignment).\n");
         }
 
         @Override 

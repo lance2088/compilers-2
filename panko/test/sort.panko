@@ -30,7 +30,6 @@ MOTAC INT siftdown INT start INT end
   VYPAPAJ 0
          
 MOTAC INT heapify INT count 
-  
   PAN INT start / - count 2 2
   
   MACKAJ SMALLER - 0 1 start 
